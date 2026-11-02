@@ -14,6 +14,8 @@
   · <a href="README.md">Русский</a>
 </p>
 
+<p align="center"><img src="docs/img/menu-mac.png" width="380" alt="Kordon menu in the macOS menu bar"></p>
+
 ## Why Kordon
 
 | | VPN client kill switch | Firewall rules | **Kordon** |

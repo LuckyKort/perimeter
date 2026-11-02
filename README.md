@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/img/menu-mac.png" width="420" alt="Меню Kordon в строке меню macOS">
+  <img src="docs/img/menu-mac.png" width="380" alt="Меню Kordon в строке меню macOS">
 </p>
 
 ## Зачем

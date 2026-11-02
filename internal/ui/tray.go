@@ -270,6 +270,8 @@ func (t *Tray) render(s guard.Snapshot, evs []guard.Event) {
 		}
 	}
 
+	// Autostart can also be switched from the CLI, so the tick is re-read every time.
+	setChecked(t.mAutostart, app.AutostartEnabled())
 	setChecked(t.mBarIP, cfg.MenuBar == "ip")
 	setChecked(t.mBarCountry, cfg.MenuBar == "country")
 	setChecked(t.mBarIcon, cfg.MenuBar == "icon")
