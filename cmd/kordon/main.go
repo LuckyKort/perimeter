@@ -120,9 +120,13 @@ func fatal(err error) {
 }
 
 func cli(args []string) error {
-	cfg, _, err := config.Load(app.ConfigPath())
-	if err != nil {
-		return fmt.Errorf("%s: %w", app.ConfigPath(), err)
+	// Read, never create: the first start of the app itself must see a missing
+	// config, that's how it knows to turn on autostart and allow the current IP.
+	cfg := config.Default()
+	if data, err := os.ReadFile(app.ConfigPath()); err == nil {
+		if cfg, err = config.Parse(data); err != nil {
+			return fmt.Errorf("%s: %w", app.ConfigPath(), err)
+		}
 	}
 	setupLang(cfg)
 	switch args[0] {
