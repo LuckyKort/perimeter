@@ -43,6 +43,12 @@ type CustomApp struct {
 	Match []string `yaml:"match"`
 }
 
+// TrustedNetwork is a local network (identified by its router) where apps may run as they are.
+type TrustedNetwork struct {
+	Name string `yaml:"name"`
+	ID   string `yaml:"id"`
+}
+
 type Allow struct {
 	IPs       []string `yaml:"ips"`
 	Countries []string `yaml:"countries"`
@@ -52,6 +58,10 @@ type Config struct {
 	Apps       []string    `yaml:"apps"`
 	CustomApps []CustomApp `yaml:"custom_apps"`
 	Allow      Allow       `yaml:"allow"`
+	// AppRules gives an app its own allow-list instead of the shared one.
+	// The key is a preset id (cursor) or a custom app's name.
+	AppRules        map[string]Allow `yaml:"app_rules"`
+	TrustedNetworks []TrustedNetwork `yaml:"trusted_networks"`
 
 	FreezeOnNetworkChange bool     `yaml:"freeze_on_network_change"`
 	BlockWhenOffline      bool     `yaml:"block_when_offline"`
@@ -62,6 +72,7 @@ type Config struct {
 	IPServices    []string `yaml:"ip_services"`
 	MinAgree      int      `yaml:"min_agree"`
 	CheckIPv6     bool     `yaml:"check_ipv6"`
+	DNSCheck      string   `yaml:"dns_check"`
 	IPv6Services  []string `yaml:"ipv6_services"`
 	MenuBar       string   `yaml:"menubar"`
 	UpdateCheck   bool     `yaml:"update_check"`
@@ -94,6 +105,7 @@ func Default() *Config {
 		IPServices:            append([]string(nil), DefaultIPServices...),
 		MinAgree:              2,
 		CheckIPv6:             true,
+		DNSCheck:              "warn",
 		IPv6Services:          append([]string(nil), DefaultIPv6Services...),
 		MenuBar:               "ip",
 		UpdateCheck:           true,
@@ -150,6 +162,24 @@ func (c *Config) normalize() error {
 	if c.MinAgree < 1 {
 		c.MinAgree = 1
 	}
+	switch c.DNSCheck {
+	case "warn", "block", "off":
+	default:
+		c.DNSCheck = "warn"
+	}
+	rules := map[string]Allow{}
+	for k, a := range c.AppRules {
+		for i, cc := range a.Countries {
+			a.Countries[i] = strings.ToUpper(strings.TrimSpace(cc))
+		}
+		for _, ip := range a.IPs {
+			if _, err := ParseIPOrNet(ip); err != nil {
+				return fmt.Errorf("app_rules.%s: %w", k, err)
+			}
+		}
+		rules[strings.ToLower(strings.TrimSpace(k))] = a
+	}
+	c.AppRules = rules
 	switch c.MenuBar {
 	case "ip", "country", "icon":
 	default:
@@ -161,6 +191,16 @@ func (c *Config) normalize() error {
 		c.Language = "auto"
 	}
 	return nil
+}
+
+// Trusted returns the trusted network with this id, if any.
+func (c *Config) Trusted(id string) (TrustedNetwork, bool) {
+	for _, n := range c.TrustedNetworks {
+		if id != "" && n.ID == id {
+			return n, true
+		}
+	}
+	return TrustedNetwork{}, false
 }
 
 // Need is how many IP services must agree; never more than there are services.
@@ -178,6 +218,11 @@ func (c *Config) Clone() *Config {
 	n.Allow.Countries = append([]string(nil), c.Allow.Countries...)
 	n.IPServices = append([]string(nil), c.IPServices...)
 	n.IPv6Services = append([]string(nil), c.IPv6Services...)
+	n.TrustedNetworks = append([]TrustedNetwork(nil), c.TrustedNetworks...)
+	n.AppRules = make(map[string]Allow, len(c.AppRules))
+	for k, a := range c.AppRules {
+		n.AppRules[k] = Allow{IPs: append([]string(nil), a.IPs...), Countries: append([]string(nil), a.Countries...)}
+	}
 	return &n
 }
 

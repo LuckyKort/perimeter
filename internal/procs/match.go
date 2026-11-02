@@ -12,12 +12,13 @@ import (
 
 // Proc is one running process.
 type Proc struct {
-	PID  int
-	PPID int
-	Name string // executable file name: "Claude", "claude.exe"
-	Path string // full executable path, may be empty if the OS hides it
-	Args string // command line, only collected for interpreters (node, python...)
-	App  string // which protected app it belongs to (display name)
+	PID   int
+	PPID  int
+	Name  string // executable file name: "Claude", "claude.exe"
+	Path  string // full executable path, may be empty if the OS hides it
+	Args  string // command line, only collected for interpreters (node, python...)
+	App   string // which protected app it belongs to (display name)
+	AppID string // its preset id or lowercased custom name
 }
 
 // Rule matches processes of one app. See config template for the syntax.
@@ -153,6 +154,7 @@ func (r Rule) Match(p Proc) bool {
 
 // Target is a named rule to look for.
 type Target struct {
+	ID   string // preset id, or a custom app's lowercased name (the key in app_rules)
 	Name string
 	Rule Rule
 }
@@ -162,11 +164,11 @@ func Targets(c *config.Config) []Target {
 	var ts []Target
 	for _, id := range c.Apps {
 		if p, ok := PresetByID(id); ok {
-			ts = append(ts, Target{Name: p.Name, Rule: p.Rule()})
+			ts = append(ts, Target{ID: p.ID, Name: p.Name, Rule: p.Rule()})
 		}
 	}
 	for _, a := range c.CustomApps {
-		ts = append(ts, Target{Name: a.Name, Rule: ParseMatch(a.Match)})
+		ts = append(ts, Target{ID: strings.ToLower(a.Name), Name: a.Name, Rule: ParseMatch(a.Match)})
 	}
 	return ts
 }
@@ -183,7 +185,7 @@ func Filter(all []Proc, ts []Target, self int) []Proc {
 			children[p.PPID] = append(children[p.PPID], p.PID)
 		}
 	}
-	app := map[int]string{}
+	app := map[int]Target{}
 	var queue []int
 	for _, p := range all {
 		if p.PID == self || p.PID <= 1 {
@@ -191,7 +193,7 @@ func Filter(all []Proc, ts []Target, self int) []Proc {
 		}
 		for _, t := range ts {
 			if t.Rule.Match(p) {
-				app[p.PID] = t.Name
+				app[p.PID] = t
 				queue = append(queue, p.PID)
 				break
 			}
@@ -209,9 +211,9 @@ func Filter(all []Proc, ts []Target, self int) []Proc {
 		}
 	}
 	out := make([]Proc, 0, len(app))
-	for pid, name := range app {
+	for pid, t := range app {
 		p := byPID[pid]
-		p.App = name
+		p.App, p.AppID = t.Name, t.ID
 		out = append(out, p)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].PID < out[j].PID })

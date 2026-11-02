@@ -24,9 +24,11 @@ import (
 
 	"github.com/ef1m03/kordon/internal/app"
 	"github.com/ef1m03/kordon/internal/config"
+	"github.com/ef1m03/kordon/internal/guard"
 	"github.com/ef1m03/kordon/internal/netwatch"
 	"github.com/ef1m03/kordon/internal/ui"
 	"github.com/ef1m03/kordon/internal/update"
+	"github.com/ef1m03/kordon/internal/window"
 )
 
 var version = "dev"
@@ -96,6 +98,11 @@ func run(tray bool) {
 	ctx, cancel := context.WithCancel(context.Background())
 	r := app.NewRunner(ctx, cfg)
 	r.OnConfigError = func(err error) { app.Notify(ui.T("cfg.error.t"), ui.T("cfg.error.b", err)) }
+	stats := app.LoadStats()
+	srv := &ui.Server{G: r.G, Stats: stats, Version: version}
+	if err := srv.Start(ctx); err != nil {
+		app.Logf("panel server: %v", err)
+	}
 
 	done := make(chan struct{})
 	go func() { r.Run(); close(done) }()
@@ -109,12 +116,16 @@ func run(tray bool) {
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 
 	if !tray {
-		r.G.OnChange(ui.HeadlessRender)
+		r.G.OnChange(func(snap guard.Snapshot, evs []guard.Event) {
+			stats.Record(snap.Counters, time.Now())
+			ui.HeadlessRender(snap, evs)
+		})
 		<-sig
 		stop()
 		return
 	}
-	t := &ui.Tray{G: r.G, Version: version, OnQuit: stop, UpdateCheck: cfg.UpdateCheck}
+	t := &ui.Tray{G: r.G, Version: version, OnQuit: stop, UpdateCheck: cfg.UpdateCheck, Stats: stats}
+	srv.UpdateAvailable, srv.InstallUpdate = t.UpdateAvailable, t.InstallUpdate
 	go func() {
 		<-sig
 		stop()
@@ -156,6 +167,8 @@ func cli(args []string) error {
 		return nil
 	case "update":
 		return selfUpdate()
+	case "panel":
+		return openPanel()
 	case "version", "--version", "-v":
 		fmt.Println("kordon", version)
 		return nil
@@ -175,6 +188,7 @@ const usage = `Kordon - kill switch for apps: freezes them when your network or 
   kordon allow NL        allow a country
   kordon config          print the config file path
   kordon autostart on|off
+  kordon panel           open the Kordon panel
   kordon update          install the latest version
   kordon headless        run without a tray icon
   kordon version
@@ -269,6 +283,19 @@ func selfUpdate() error {
 			return restart()
 		}
 		fmt.Println("restart Kordon (Quit in the menu and open it again) to use it")
+	}
+	return nil
+}
+
+// openPanel shows the running Kordon's panel in a window (or the browser on Linux).
+func openPanel() error {
+	p, err := ui.ReadPanelInfo()
+	if err != nil {
+		return errors.New("Kordon is not running - start it first")
+	}
+	url := p.URL + "?t=" + p.Token
+	if err := window.Open(url, "Kordon", ui.T("panel.close"), ui.T("panel.quit")); err != nil {
+		return app.OpenURL(url)
 	}
 	return nil
 }

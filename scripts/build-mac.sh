@@ -11,7 +11,9 @@ rm -rf "$APP" dist/Kordon-macos.zip build/mac
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/mac
 
 for arch in arm64 amd64; do
-  CC="clang -arch $([ $arch = amd64 ] && echo x86_64 || echo arm64)" \
+  carch=$([ $arch = amd64 ] && echo x86_64 || echo arm64)
+  # The panel window (WebKit) has C++ parts, so both compilers get the target arch.
+  CC="clang -arch $carch" CXX="clang++ -arch $carch" CGO_CXXFLAGS="-Wno-deprecated-literal-operator" \
   CGO_ENABLED=1 GOOS=darwin GOARCH=$arch MACOSX_DEPLOYMENT_TARGET=11.0 \
     go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o build/mac/kordon-$arch ./cmd/kordon
 done

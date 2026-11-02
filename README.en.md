@@ -14,7 +14,12 @@
   · <a href="README.md">Русский</a>
 </p>
 
-<p align="center"><img src="docs/img/menu-mac.png" width="380" alt="Kordon menu in the macOS menu bar"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/panel-overview-dark.png">
+    <img src="docs/img/panel-overview-light.png" width="760" alt="Kordon panel: protection status, public IP, IPv6, DNS and network">
+  </picture>
+</p>
 
 ## Why Kordon
 
@@ -26,10 +31,19 @@
 | IP and country visible at a glance | ❌ | ❌ | ✅ |
 | Works with proxy-mode VPN clients | depends | ❌ | ✅ |
 | Catches IPv6 leaks when the VPN tunnels only IPv4 | not always | ❌ | ✅ |
+| Catches DNS leaks | not always | ❌ | ✅ |
+| Per-app rules | ❌ | by hand | ✅ |
+| No VPN needed at home, required in a café | ❌ | ❌ | ✅ trusted networks |
 | No admin rights needed | not always | ❌ | ✅ |
 | Same tool on macOS, Windows and Linux | ❌ | ❌ | ✅ |
 
 ## What it does
+
+- **The Kordon panel**: a real window with status, apps, rules, networks, statistics, history and every setting. No file editing.
+- **Per-app rules**: Claude only from the Netherlands, Cursor from the EU and US. Groups work independently.
+- **Trusted networks**: work without a VPN at home or the office, protected everywhere else. Recognised by the router, no location permission needed.
+- **DNS leaks**: warns (or freezes) when lookups bypass the VPN.
+- **Statistics** for the last two weeks, and **Report a problem** with the log pre-filled and every IP/MAC masked.
 
 - **Freezes instead of killing.** The network changes, the protected apps are paused (`SIGSTOP` / `NtSuspendProcess`). Same IP - you won't notice. An allowed IP is back within 20 s - the app continues where it was.
 - **Closes them if the IP doesn't come back**: politely first so they can save, then by force. While the IP isn't allowed they can't be started again.
@@ -83,7 +97,7 @@ check_ipv6: true
 menubar: ip   # ip, country or icon
 ```
 
-CLI: `kordon status`, `kordon allow [IP|subnet|CC]`, `kordon config`, `kordon autostart on|off`, `kordon update`, `kordon headless`.
+CLI: `kordon panel`, `kordon status`, `kordon allow [IP|subnet|CC]`, `kordon config`, `kordon autostart on|off`, `kordon update`, `kordon headless`.
 
 ## What goes over the network
 

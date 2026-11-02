@@ -66,9 +66,22 @@ func (r *Runner) probe(c *config.Config) {
 				v6, err6 = netwatch.PublicIP(r.ctx, c.IPv6Services, httpTimeout, true, 1)
 			}()
 		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res.NetID = netwatch.NetworkID()
+			if c.DNSCheck != "off" {
+				ctx, cancel := context.WithTimeout(r.ctx, httpTimeout)
+				res.DNS = netwatch.DNSResolver(ctx)
+				cancel()
+			}
+		}()
 		wg.Wait()
 		if res.Err == nil {
 			res.Country = r.geo.Country(r.ctx, res.IP, httpTimeout)
+		}
+		if res.DNS != "" {
+			res.DNSCountry = r.geo.Country(r.ctx, res.DNS, httpTimeout)
 		}
 		if err6 == nil {
 			res.IP6 = v6.IP

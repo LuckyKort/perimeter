@@ -3,6 +3,8 @@ package ui
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"runtime"
 	"slices"
 	"strings"
@@ -29,6 +31,7 @@ type Tray struct {
 	Version     string
 	OnQuit      func()
 	UpdateCheck bool
+	Stats       *app.Stats
 
 	mu       sync.Mutex
 	lastIcon string
@@ -47,12 +50,16 @@ type Tray struct {
 	mSettings, mLog, mAutostart             *systray.MenuItem
 	mBar, mBarIP, mBarCountry, mBarIcon     *systray.MenuItem
 	mAbout, mStudio, mQuit                  *systray.MenuItem
-	mUpdate                                 *systray.MenuItem
+	mUpdate, mPanel, mTrust, mDNS, mReport  *systray.MenuItem
 	latest                                  update.Release
+	quitNow                                 chan struct{}
 }
 
 // Run blocks on the main thread until Quit.
-func (t *Tray) Run() { systray.Run(t.onReady, func() {}) }
+func (t *Tray) Run() {
+	t.quitNow = make(chan struct{})
+	systray.Run(t.onReady, func() {})
+}
 
 func (t *Tray) onReady() {
 	systray.SetTooltip("Kordon")
@@ -60,6 +67,8 @@ func (t *Tray) onReady() {
 
 	t.mUpdate = systray.AddMenuItem("", "")
 	t.mUpdate.Hide()
+	t.mPanel = systray.AddMenuItem(T("panel"), "")
+	systray.AddSeparator()
 	t.mStatus = systray.AddMenuItem(T("starting"), "")
 	t.mStatus.Disable()
 	t.mNow = systray.AddMenuItem(T("now.unknown"), "")
@@ -70,6 +79,9 @@ func (t *Tray) onReady() {
 	t.mOthers = systray.AddMenuItem("", "")
 	t.mOthers.Disable()
 	t.mOthers.Hide()
+	t.mDNS = systray.AddMenuItem("", "")
+	t.mDNS.Disable()
+	t.mDNS.Hide()
 	t.mAllowed = systray.AddMenuItem("", "")
 	t.mAllowed.Disable()
 	systray.AddSeparator()
@@ -78,6 +90,8 @@ func (t *Tray) onReady() {
 	t.mAllowCountry = systray.AddMenuItem("", "")
 	t.mAllowIP.Hide()
 	t.mAllowCountry.Hide()
+	t.mTrust = systray.AddMenuItem(T("trust"), "")
+	t.mTrust.Hide()
 	t.mCheck = systray.AddMenuItem(T("check"), "")
 	t.mPause = systray.AddMenuItem(T("pause"), "")
 	t.mP15 = t.mPause.AddSubMenuItem(T("pause.15m"), "")
@@ -115,6 +129,7 @@ func (t *Tray) onReady() {
 
 	t.mSettings = systray.AddMenuItem(T("settings"), "")
 	t.mLog = systray.AddMenuItem(T("log"), "")
+	t.mReport = systray.AddMenuItem(T("report"), "")
 	t.mAutostart = systray.AddMenuItemCheckbox(T("autostart"), "", app.AutostartEnabled())
 	t.mBar = systray.AddMenuItem(T("menubar"), "")
 	t.mBarIP = t.mBar.AddSubMenuItemCheckbox(T("menubar.ip"), "", false)
@@ -152,6 +167,13 @@ func (t *Tray) loop() {
 			t.G.AllowCurrentIP(time.Now())
 		case <-t.mAllowCountry.ClickedCh:
 			t.G.AllowCurrentCountry(time.Now())
+		case <-t.mPanel.ClickedCh:
+			OpenPanel()
+		case <-t.mTrust.ClickedCh:
+			t.G.TrustCurrentNetwork(time.Now(), "")
+			OpenPanel() // to give it a name
+		case <-t.mReport.ClickedCh:
+			_ = app.OpenURL(app.ReportURL(t.Version))
 		case <-t.mCheck.ClickedCh:
 			t.G.CheckNow(time.Now())
 		case <-t.mP15.ClickedCh:
@@ -185,6 +207,8 @@ func (t *Tray) loop() {
 			if t.installUpdate() {
 				return
 			}
+		case <-t.quitNow:
+			return
 		case <-t.mAbout.ClickedCh:
 			_ = app.OpenURL(app.RepoURL)
 		case <-t.mStudio.ClickedCh:
@@ -221,6 +245,23 @@ func (t *Tray) updateLoop() {
 			}
 		}
 		time.Sleep(24 * time.Hour)
+	}
+}
+
+// UpdateAvailable is the newer version found, or "".
+func (t *Tray) UpdateAvailable() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if update.Newer(t.Version, t.latest.Version()) {
+		return t.latest.Version()
+	}
+	return ""
+}
+
+// InstallUpdate is the panel's "Update" button.
+func (t *Tray) InstallUpdate() {
+	if t.installUpdate() {
+		close(t.quitNow)
 	}
 }
 
@@ -300,6 +341,15 @@ func (t *Tray) render(s guard.Snapshot, evs []guard.Event) {
 	showIf(t.mOthers, len(s.Others) > 0)
 	t.mOthers.SetTitle(T("others", strings.Join(s.Others, ", ")))
 	t.mAllowed.SetTitle(T("allowed.summary", allowedSummary(cfg.Allow)))
+	showIf(t.mDNS, s.DNSLeak)
+	t.mDNS.SetTitle(T("dns.leak", IPWithCountry(s.DNS, s.DNSCountry)))
+	showIf(t.mTrust, s.NetID != "" && s.Network == "" && !s.Paused())
+	if s.Network != "" {
+		t.mAllowed.SetTitle(T("trusted.on", s.Network))
+	}
+	if t.Stats != nil {
+		t.Stats.Record(s.Counters, time.Now())
+	}
 
 	allowed := s.Allowed()
 	showIf(t.mAllowIP, s.IP != "" && !allowed && !s.Paused() && (s.Reason == guard.IPNotAllowed || s.Reason == guard.IPv6Leak))
@@ -449,4 +499,15 @@ func HeadlessRender(s guard.Snapshot, evs []guard.Event) {
 		Status: statusName(s.Status), Line: StatusLine(s), IP: s.IP, Country: s.Country,
 		Allowed: s.Allowed(), Apps: procs.AppNames(s.Running), Frozen: s.Frozen, Paused: s.Paused(),
 	})
+}
+
+// OpenPanel starts `kordon panel`, which shows the panel window.
+func OpenPanel() {
+	exe, err := os.Executable()
+	if err != nil {
+		return
+	}
+	cmd := exec.Command(exe, "panel")
+	cmd.Env = append(os.Environ(), "KORDON_CHILD=1") // the panel needs no supervisor
+	_ = cmd.Start()
 }

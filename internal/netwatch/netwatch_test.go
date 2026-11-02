@@ -122,3 +122,14 @@ func TestChangesStarts(t *testing.T) {
 	}
 	cancel()
 }
+
+func TestNormMAC(t *testing.T) {
+	if normMAC("50:ff:20:1:2:3") != "50:ff:20:01:02:03" || normMAC("00:00:00:00:00:00") != "" || normMAC("(incomplete)") != "" {
+		t.Fatal("normMAC")
+	}
+}
+
+// TestNetworkIDLive only checks that it doesn't crash; CI runners may have no ARP entry.
+func TestNetworkIDLive(t *testing.T) {
+	t.Logf("network id: %q, dns resolver: %q", NetworkID(), DNSResolver(context.Background()))
+}

@@ -421,3 +421,123 @@ func TestUnconfirmedIP(t *testing.T) {
 	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 1})
 	h.want(OK)
 }
+
+var cursor = procs.Proc{PID: 300, Name: "Cursor", Path: "/Applications/Cursor.app/Contents/MacOS/Cursor"}
+
+func TestPerAppRules(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	h.p.procs = append(h.p.procs, cursor)
+	c := h.g.cfg.Clone()
+	c.Apps = []string{"claude", "cursor"}
+	c.AppRules = map[string]config.Allow{"cursor": {Countries: []string{"DE"}}}
+	h.g.SetConfig(h.now, c)
+	h.step(0)
+	h.probe("64.137.54.87", "NL")
+	h.want(Suspect) // Cursor's own rule doesn't allow NL
+	if h.p.frozen[claude.PID] || !h.p.frozen[cursor.PID] {
+		t.Fatalf("claude frozen=%v cursor frozen=%v", h.p.frozen[claude.PID], h.p.frozen[cursor.PID])
+	}
+	// The VPN moves to Germany: Cursor's rule fits, the shared one doesn't.
+	h.step(time.Second)
+	h.probe("85.10.1.1", "DE")
+	if !h.p.frozen[claude.PID] || h.p.frozen[cursor.PID] {
+		t.Fatal("rules not applied per app")
+	}
+	s := h.g.Snapshot(h.now)
+	if len(s.Groups) != 2 || s.Groups[1].Key != "cursor" || s.Groups[1].Status != OK || s.Groups[0].Status != Suspect {
+		t.Fatalf("groups %+v", s.Groups)
+	}
+	// Removing the rule puts Cursor back under the shared list; nothing stays frozen by accident.
+	c = h.g.cfg.Clone()
+	delete(c.AppRules, "cursor")
+	h.g.SetConfig(h.now, c)
+	if s := h.g.Snapshot(h.now); len(s.Groups) != 1 {
+		t.Fatalf("groups after removing the rule: %d", len(s.Groups))
+	}
+	if !h.p.frozen[cursor.PID] {
+		t.Fatal("cursor must now follow the shared (frozen) state")
+	}
+}
+
+func TestTrustedNetwork(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	h.step(0)
+	// At home, no VPN: Russian IP, but the router is trusted.
+	h.probeFull(ProbeResult{IP: "95.24.1.1", Country: "RU", Votes: 2, NetID: "aa:bb:cc:dd:ee:ff"})
+	h.want(Suspect)
+	if !h.g.TrustCurrentNetwork(h.now, "Дом") {
+		t.Fatal("TrustCurrentNetwork")
+	}
+	h.want(OK)
+	if h.saved.TrustedNetworks[0].Name != "Дом" || h.g.Snapshot(h.now).Network != "Дом" {
+		t.Fatal("not saved")
+	}
+	// Leaving home: another router, same Russian IP - protection is back.
+	h.step(time.Second)
+	h.probeFull(ProbeResult{IP: "95.24.1.1", Country: "RU", Votes: 2, NetID: "11:22:33:44:55:66"})
+	h.want(Suspect)
+}
+
+func TestDNSLeak(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	h.step(0)
+	leak := ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, DNS: "95.24.0.53", DNSCountry: "RU"}
+	h.probeFull(leak)
+	h.want(OK) // warn by default: notify, don't freeze
+	if !h.had(EvDNSLeak) || !h.g.Snapshot(h.now).DNSLeak {
+		t.Fatal("no DNS leak warning")
+	}
+	h.events = nil
+	h.step(5 * time.Second)
+	h.probeFull(leak)
+	if h.had(EvDNSLeak) {
+		t.Fatal("warned twice for the same network")
+	}
+	h.g.cfg.DNSCheck = "block"
+	h.step(5 * time.Second)
+	h.probeFull(leak)
+	h.want(Suspect)
+	if h.g.Snapshot(h.now).Reason != DNSLeak {
+		t.Fatal("want DNSLeak")
+	}
+	// DNS through the VPN: fine.
+	h.step(time.Second)
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, DNS: "1.1.1.1", DNSCountry: "NL"})
+	h.want(OK)
+}
+
+func TestCounters(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	h.step(0)
+	h.probe("64.137.54.87", "NL")
+	h.step(time.Second)
+	h.probe("95.24.1.1", "RU")
+	h.step(time.Second)
+	h.step(time.Second)
+	h.probe("64.137.54.87", "NL")
+	c := h.g.Snapshot(h.now).Counters
+	if c.Freezes != 1 || c.Saves != 1 || c.FrozenSeconds < 1.5 {
+		t.Fatalf("%+v", c)
+	}
+}
+
+func TestRemovingRuleResumesWithNotice(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	h.p.procs = append(h.p.procs, cursor)
+	c := h.g.cfg.Clone()
+	c.Apps = []string{"claude", "cursor"}
+	c.AppRules = map[string]config.Allow{"cursor": {Countries: []string{"DE"}}}
+	h.g.SetConfig(h.now, c)
+	h.step(0)
+	h.probe("64.137.54.87", "NL")
+	if !h.p.frozen[cursor.PID] {
+		t.Fatal("cursor should be frozen by its rule")
+	}
+	h.events = nil
+	c = h.g.cfg.Clone()
+	delete(c.AppRules, "cursor")
+	h.g.SetConfig(h.now, c)
+	if h.p.frozen[cursor.PID] || !h.had(EvResumed) {
+		t.Fatalf("cursor frozen=%v, resumed event=%v", h.p.frozen[cursor.PID], h.had(EvResumed))
+	}
+}

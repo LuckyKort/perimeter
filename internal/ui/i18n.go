@@ -110,6 +110,25 @@ var msgs = map[string]map[string]string{
 		"reason.net":        "сеть изменилась",
 		"cfg.error.t":       "Ошибка в настройках",
 		"cfg.error.b":       "%v. Работаю со старыми настройками.",
+		"panel":             "Открыть панель Kordon…",
+		"panel.close":       "Закрыть окно",
+		"panel.quit":        "Закрыть панель",
+		"trust":             "Доверять этой сети (без проверки IP)",
+		"trusted.on":        "Доверенная сеть: %s",
+		"dns.leak":          "⚠ DNS идёт мимо VPN: %s",
+		"report":            "Сообщить о проблеме…",
+		"frozen.dns":        "DNS мимо VPN: заморожено, закрою через %s",
+		"blocked.dns":       "Заблокировано: DNS идёт мимо VPN",
+		"reason.dns":        "DNS мимо VPN",
+		"ev.dnsleak":        "DNS идёт мимо VPN: %s",
+		"ev.dnsleak.t":      "DNS идёт мимо VPN",
+		"ev.dnsleak.b":      "Запросы к сайтам уходят через %s, а не через VPN. Сайты, которые вы открываете, видны провайдеру. Включите DNS в настройках VPN.",
+		"ev.trusted":        "Доверенная сеть: %s",
+		"ev.frozen.dns.b":   "IP через VPN, но DNS идёт через %s. Если не исправится за %s, закрою.",
+		"ev.blocked.dns.b":  "DNS идёт через %s мимо VPN. Включите DNS в настройках VPN.",
+		"panel.err.custom":  "Нужны название и хотя бы одно правило поиска",
+		"panel.err.trust":   "Не удалось узнать эту сеть: Kordon не видит роутер (например, при подключении только через VPN)",
+		"panel.err.country": "Нужен двухбуквенный код страны",
 		"update.available":  "Обновить до %s",
 		"update.installing": "Устанавливаю %s…",
 		"update.t":          "Вышел Kordon %s",
@@ -214,6 +233,25 @@ var msgs = map[string]map[string]string{
 		"reason.net":        "network changed",
 		"cfg.error.t":       "Settings error",
 		"cfg.error.b":       "%v. Keeping the previous settings.",
+		"panel":             "Open Kordon panel…",
+		"panel.close":       "Close Window",
+		"panel.quit":        "Quit Panel",
+		"trust":             "Trust this network (no IP check)",
+		"trusted.on":        "Trusted network: %s",
+		"dns.leak":          "⚠ DNS bypasses the VPN: %s",
+		"report":            "Report a problem…",
+		"frozen.dns":        "DNS bypasses the VPN: frozen, closing in %s",
+		"blocked.dns":       "Blocked: DNS bypasses the VPN",
+		"reason.dns":        "DNS bypasses the VPN",
+		"ev.dnsleak":        "DNS bypasses the VPN: %s",
+		"ev.dnsleak.t":      "DNS bypasses the VPN",
+		"ev.dnsleak.b":      "Lookups go through %s instead of the VPN, so your ISP sees which sites you open. Turn on DNS in your VPN settings.",
+		"ev.trusted":        "Trusted network: %s",
+		"ev.frozen.dns.b":   "The IP goes through the VPN, but DNS goes through %s. If it isn't fixed within %s, I'll close it.",
+		"ev.blocked.dns.b":  "DNS goes through %s, around the VPN. Turn on DNS in your VPN settings.",
+		"panel.err.custom":  "A name and at least one match rule are needed",
+		"panel.err.trust":   "Can't identify this network: Kordon doesn't see the router (e.g. when connected through a VPN only)",
+		"panel.err.country": "A two-letter country code is needed",
 		"update.available":  "Update to %s",
 		"update.installing": "Installing %s…",
 		"update.t":          "Kordon %s is out",
@@ -320,6 +358,8 @@ func StatusLine(s guard.Snapshot) string {
 			return T("frozen.v6", Dur(s.GraceLeft))
 		case guard.Unconfirmed:
 			return T("frozen.unconf", Dur(s.GraceLeft))
+		case guard.DNSLeak:
+			return T("frozen.dns", Dur(s.GraceLeft))
 		}
 		return T("frozen.ip", Dur(s.GraceLeft))
 	case guard.Blocked:
@@ -330,6 +370,8 @@ func StatusLine(s guard.Snapshot) string {
 			return T("blocked.v6")
 		case guard.Unconfirmed:
 			return T("blocked.unconf")
+		case guard.DNSLeak:
+			return T("blocked.dns")
 		}
 		return T("blocked.ip")
 	}
@@ -346,6 +388,8 @@ func reasonText(r guard.Reason) string {
 		return T("reason.v6")
 	case guard.Unconfirmed:
 		return T("reason.unconf")
+	case guard.DNSLeak:
+		return T("reason.dns")
 	}
 	return T("reason.ip")
 }
@@ -387,6 +431,10 @@ func EventLine(e guard.Event) string {
 		s = T("ev.allowedip", ipc)
 	case guard.EvAllowedCountry:
 		s = T("ev.allowedcountry", Country(e.Country))
+	case guard.EvDNSLeak:
+		s = T("ev.dnsleak", IPWithCountry(e.IP, e.Country))
+	case guard.EvTrusted:
+		s = T("ev.trusted", e.Network)
 	}
 	return e.At.Local().Format("15:04:05") + "  " + s
 }
@@ -409,6 +457,8 @@ func Notification(e guard.Event) (title, body string, ok bool) {
 			return T("ev.frozen.t", apps), T("ev.frozen.v6.b", IPWithCountry(e.IP6, e.Country6), Dur(e.Dur)), true
 		case guard.Unconfirmed:
 			return T("ev.frozen.t", apps), T("ev.frozen.unconf.b", seen(e), Dur(e.Dur)), true
+		case guard.DNSLeak:
+			return T("ev.frozen.t", apps), T("ev.frozen.dns.b", IPWithCountry(e.DNS, e.DNSCountry), Dur(e.Dur)), true
 		}
 		return T("ev.frozen.t", apps), T("ev.frozen.ip.b", ipc, Dur(e.Dur)), true
 	case guard.EvResumed:
@@ -421,12 +471,16 @@ func Notification(e guard.Event) (title, body string, ok bool) {
 			return T("ev.blocked.t", apps), T("ev.blocked.v6.b", IPWithCountry(e.IP6, e.Country6)), true
 		case guard.Unconfirmed:
 			return T("ev.blocked.t", apps), T("ev.blocked.unconf.b", seen(e)), true
+		case guard.DNSLeak:
+			return T("ev.blocked.t", apps), T("ev.blocked.dns.b", IPWithCountry(e.DNS, e.DNSCountry)), true
 		}
 		return T("ev.blocked.t", apps), T("ev.blocked.ip.b", ipc), true
 	case guard.EvKilledNew:
 		return T("ev.killednew.t", apps), T("ev.killednew.b", ipc), true
 	case guard.EvUnblocked:
 		return T("ev.unblocked.t"), T("ev.unblocked.b", ipc), true
+	case guard.EvDNSLeak:
+		return T("ev.dnsleak.t"), T("ev.dnsleak.b", ipc), true
 	}
 	return "", "", false
 }

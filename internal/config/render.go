@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -11,12 +12,16 @@ import (
 var CommentLang = "ru"
 
 type tpl struct {
+	rules, trusted, dns string
 	header, apps, appsList, custom, allow, ips, countries,
 	freeze, offline, grace, closeT, interval, services, agree, ipv6, services6, menubar, update, lang, notify string
 }
 
 var templates = map[string]tpl{
 	"ru": {
+		rules:   "# Свои правила для отдельных приложений вместо общих allow. Ключ - id из apps\n# или имя своего приложения. Пример:\n#   cursor:\n#     countries: [NL, DE, US]",
+		trusted: "# Доверенные сети: здесь приложения работают без проверки IP (дом, офис).\n# Сеть узнаётся по её роутеру. Проще добавлять из панели Kordon: «Доверять этой сети».",
+		dns:     "# Утечка DNS (запросы к сайтам идут мимо VPN): warn - предупредить,\n# block - заморозить, как при чужом IP, off - не проверять.",
 		header: "# Kordon - настройки. Сохраните файл, и Kordon подхватит изменения сам, перезапуск не нужен.\n" +
 			"# Справка: https://github.com/ef1m03/kordon#настройки",
 		apps: "# Какие приложения защищать. Готовые: claude, chatgpt, codex, cursor, windsurf,\n" +
@@ -44,6 +49,9 @@ var templates = map[string]tpl{
 		notify:    "# Показывать уведомления.",
 	},
 	"en": {
+		rules:   "# Per-app rules instead of the shared allow list. The key is an id from apps\n# or a custom app's name. Example:\n#   cursor:\n#     countries: [NL, DE, US]",
+		trusted: "# Trusted networks: apps run here without the IP check (home, office).\n# A network is recognised by its router. Easier from the Kordon panel: \"Trust this network\".",
+		dns:     "# DNS leaks (lookups bypass the VPN): warn - notify, block - freeze like a\n# foreign IP, off - don't check.",
 		header: "# Kordon settings. Save the file and Kordon picks the changes up, no restart needed.\n" +
 			"# Docs: https://github.com/ef1m03/kordon/blob/main/README.en.md#settings",
 		apps: "# Which apps to protect. Built-in: claude, chatgpt, codex, cursor, windsurf,\n" +
@@ -96,6 +104,18 @@ func indentList(items []string) string {
 	return b.String()
 }
 
+func indent3(items []string) string {
+	if len(items) == 0 {
+		return " []"
+	}
+	var b strings.Builder
+	for _, it := range items {
+		b.WriteString("\n      - ")
+		b.WriteString(strconv.Quote(it))
+	}
+	return b.String()
+}
+
 // Render writes the config as commented YAML.
 func Render(c *Config) string {
 	t, ok := templates[CommentLang]
@@ -116,6 +136,28 @@ func Render(c *Config) string {
 	fmt.Fprintf(&b, "%s\ncustom_apps:%s\n\n", t.custom, custom.String())
 	fmt.Fprintf(&b, "%s\nallow:\n  %s\n  ips:%s\n  %s\n  countries:%s\n\n",
 		t.allow, t.ips, indentList(c.Allow.IPs), strings.ReplaceAll(t.countries, "\n", "\n  "), indentList(c.Allow.Countries))
+	fmt.Fprintf(&b, "%s\napp_rules:", t.rules)
+	if len(c.AppRules) == 0 {
+		b.WriteString(" {}")
+	}
+	keys := make([]string, 0, len(c.AppRules))
+	for k := range c.AppRules {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		a := c.AppRules[k]
+		fmt.Fprintf(&b, "\n  %s:\n    ips:%s\n    countries:%s", strconv.Quote(k), indent3(a.IPs), indent3(a.Countries))
+	}
+	b.WriteString("\n\n")
+	fmt.Fprintf(&b, "%s\ntrusted_networks:", t.trusted)
+	if len(c.TrustedNetworks) == 0 {
+		b.WriteString(" []")
+	}
+	for _, n := range c.TrustedNetworks {
+		fmt.Fprintf(&b, "\n  - name: %s\n    id: %s", strconv.Quote(n.Name), strconv.Quote(n.ID))
+	}
+	b.WriteString("\n\n")
 	fmt.Fprintf(&b, "%s\nfreeze_on_network_change: %t\n\n", t.freeze, c.FreezeOnNetworkChange)
 	fmt.Fprintf(&b, "%s\nblock_when_offline: %t\n\n", t.offline, c.BlockWhenOffline)
 	fmt.Fprintf(&b, "%s\ngrace: %s\n\n", t.grace, c.Grace)
@@ -124,6 +166,7 @@ func Render(c *Config) string {
 	fmt.Fprintf(&b, "%s\nip_services:%s\n\n", t.services, list(c.IPServices))
 	fmt.Fprintf(&b, "%s\nmin_agree: %d\n\n", t.agree, c.MinAgree)
 	fmt.Fprintf(&b, "%s\ncheck_ipv6: %t\n\n", t.ipv6, c.CheckIPv6)
+	fmt.Fprintf(&b, "%s\ndns_check: %s\n\n", t.dns, c.DNSCheck)
 	fmt.Fprintf(&b, "%s\nipv6_services:%s\n\n", t.services6, list(c.IPv6Services))
 	fmt.Fprintf(&b, "%s\nmenubar: %s\n\n", t.menubar, c.MenuBar)
 	fmt.Fprintf(&b, "%s\nupdate_check: %t\n\n", t.update, c.UpdateCheck)

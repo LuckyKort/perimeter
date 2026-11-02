@@ -16,6 +16,9 @@ func TestRenderParseRoundTrip(t *testing.T) {
 		c.Allow.Countries = []string{"NL", "DE"}
 		c.Grace = Duration(90 * time.Second)
 		c.MenuBar = "country"
+		c.AppRules = map[string]Allow{"cursor": {Countries: []string{"DE", "US"}}, "my app": {IPs: []string{"1.2.3.4"}}}
+		c.TrustedNetworks = []TrustedNetwork{{Name: "Дом", ID: "aa:bb:cc:dd:ee:ff"}}
+		c.DNSCheck = "block"
 		got, err := Parse([]byte(Render(c)))
 		if err != nil {
 			t.Fatalf("%s: %v\n%s", lang, err, Render(c))
