@@ -14,6 +14,18 @@
   · <a href="README.md">Русский</a>
 </p>
 
+## Why Kordon
+
+| | VPN client kill switch | Firewall rules | **Kordon** |
+|---|:---:|:---:|:---:|
+| Only touches the apps you chose | ❌ cuts everything | ✅ | ✅ |
+| A 2-second VPN blip doesn't lose your work | ❌ | ❌ drops connections | ✅ freezes |
+| Allow a whole country, not one address | ❌ | ❌ | ✅ |
+| IP and country visible at a glance | ❌ | ❌ | ✅ |
+| Works with proxy-mode VPN clients | depends | ❌ | ✅ |
+| No admin rights needed | not always | ❌ | ✅ |
+| Same tool on macOS, Windows and Linux | ❌ | ❌ | ✅ |
+
 ## What it does
 
 - **Freezes instead of killing.** The network changes, the protected apps are paused (`SIGSTOP` / `NtSuspendProcess`). Same IP - you won't notice. An allowed IP is back within 20 s - the app continues where it was.
