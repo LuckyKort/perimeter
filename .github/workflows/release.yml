@@ -81,4 +81,5 @@ jobs:
         run: |
           cp scripts/install.sh scripts/install.ps1 dist/
           (cd dist && sha256sum * > SHA256SUMS.txt)
-          gh release create "$GITHUB_REF_NAME" dist/* --title "Kordon ${GITHUB_REF_NAME}" --notes-file docs/RELEASE_NOTES.md
+          ./scripts/release-notes.sh "$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Kordon ${GITHUB_REF_NAME}" --notes-file notes.md
