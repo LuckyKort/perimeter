@@ -12,7 +12,7 @@ var CommentLang = "ru"
 
 type tpl struct {
 	header, apps, appsList, custom, allow, ips, countries,
-	freeze, offline, grace, closeT, interval, services, agree, ipv6, services6, menubar, lang, notify string
+	freeze, offline, grace, closeT, interval, services, agree, ipv6, services6, menubar, update, lang, notify string
 }
 
 var templates = map[string]tpl{
@@ -126,6 +126,7 @@ func Render(c *Config) string {
 	fmt.Fprintf(&b, "%s\ncheck_ipv6: %t\n\n", t.ipv6, c.CheckIPv6)
 	fmt.Fprintf(&b, "%s\nipv6_services:%s\n\n", t.services6, list(c.IPv6Services))
 	fmt.Fprintf(&b, "%s\nmenubar: %s\n\n", t.menubar, c.MenuBar)
+	fmt.Fprintf(&b, "%s\nupdate_check: %t\n\n", t.update, c.UpdateCheck)
 	fmt.Fprintf(&b, "%s\nlanguage: %s\n\n", t.lang, c.Language)
 	fmt.Fprintf(&b, "%s\nnotifications: %t\n", t.notify, c.Notifications)
 	return b.String()

@@ -41,6 +41,7 @@
 - **Two independent services must agree** on the IP; any disagreement counts as a possible leak.
 - **Instant reaction** to OS network events, and a supervisor that restarts Kordon if it ever crashes.
 - **Proxy-mode VPN clients** (v2rayN, Hiddify, Clash) are handled: the IP is checked through the system proxy, the way your apps see it.
+- **One-click updates**: a new release shows up as "Update to …" in the menu; Kordon downloads it, checks its SHA-256 and restarts. Nothing is installed without your click.
 - Pause, event history, a screen-sharing mode that hides the IP, hot-reloaded `config.yaml`.
 - No admin rights, no telemetry, open source.
 
@@ -82,11 +83,11 @@ check_ipv6: true
 menubar: ip   # ip, country or icon
 ```
 
-CLI: `kordon status`, `kordon allow [IP|subnet|CC]`, `kordon config`, `kordon autostart on|off`, `kordon headless`.
+CLI: `kordon status`, `kordon allow [IP|subnet|CC]`, `kordon config`, `kordon autostart on|off`, `kordon update`, `kordon headless`.
 
 ## What goes over the network
 
-Only two kinds of requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, `checkip.amazonaws.com`, `ipinfo.io/ip`; IPv6: `api6.ipify.org`, `ipv6.icanhazip.com`, `v6.ident.me`; all configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). No analytics, no update checks.
+Only two kinds of requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, `checkip.amazonaws.com`, `ipinfo.io/ip`; IPv6: `api6.ipify.org`, `ipv6.icanhazip.com`, `v6.ident.me`; all configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). Plus, once a day, one request to `api.github.com` for the latest version number (`update_check: false` turns it off). No analytics.
 
 ## How safe is it
 

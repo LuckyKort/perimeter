@@ -26,6 +26,7 @@ import (
 	"github.com/ef1m03/kordon/internal/config"
 	"github.com/ef1m03/kordon/internal/netwatch"
 	"github.com/ef1m03/kordon/internal/ui"
+	"github.com/ef1m03/kordon/internal/update"
 )
 
 var version = "dev"
@@ -57,7 +58,14 @@ func run(tray bool) {
 	}
 	// One instance only. A second one (double-click, autostart) just says where the first is.
 	lock := flock.New(app.LockPath())
-	if ok, _ := lock.TryLock(); !ok {
+	// After an update the old version may still be exiting: wait a little for the lock.
+	ok := false
+	for i := 0; i < 10 && !ok; i++ {
+		if ok, _ = lock.TryLock(); !ok {
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+	if !ok {
 		if data, err := os.ReadFile(app.ConfigPath()); err == nil {
 			if c, err := config.Parse(data); err == nil {
 				setupLang(c)
@@ -83,6 +91,7 @@ func run(tray bool) {
 		_ = app.SetAutostart(true)
 	}
 	app.Logf("Kordon %s started", version)
+	update.Cleanup()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	r := app.NewRunner(ctx, cfg)
@@ -105,7 +114,7 @@ func run(tray bool) {
 		stop()
 		return
 	}
-	t := &ui.Tray{G: r.G, Version: version, OnQuit: stop}
+	t := &ui.Tray{G: r.G, Version: version, OnQuit: stop, UpdateCheck: cfg.UpdateCheck}
 	go func() {
 		<-sig
 		stop()
@@ -145,6 +154,8 @@ func cli(args []string) error {
 	case "headless":
 		run(false)
 		return nil
+	case "update":
+		return selfUpdate()
 	case "version", "--version", "-v":
 		fmt.Println("kordon", version)
 		return nil
@@ -164,6 +175,7 @@ const usage = `Kordon - kill switch for apps: freezes them when your network or 
   kordon allow NL        allow a country
   kordon config          print the config file path
   kordon autostart on|off
+  kordon update          install the latest version
   kordon headless        run without a tray icon
   kordon version
 
@@ -230,5 +242,33 @@ func allow(cfg *config.Config, args []string) error {
 		return err
 	}
 	fmt.Println("allowed:", what)
+	return nil
+}
+
+func selfUpdate() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	rel, err := update.Latest(ctx)
+	if err != nil {
+		return err
+	}
+	if !update.Newer(version, rel.Version()) {
+		fmt.Println("kordon", version, "is the latest version")
+		return nil
+	}
+	fmt.Println("installing", rel.Version(), "…")
+	restart, err := update.Install(ctx, rel)
+	if err != nil {
+		return err
+	}
+	fmt.Println("installed", rel.Version())
+	// A running instance still runs the old code: stop it politely (it un-freezes
+	// apps on the way out) and start the new one.
+	if s, err := app.ReadState(); err == nil && processAlive(s.PID) {
+		if stopProcess(s.PID) {
+			return restart()
+		}
+		fmt.Println("restart Kordon (Quit in the menu and open it again) to use it")
+	}
 	return nil
 }

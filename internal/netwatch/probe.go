@@ -173,3 +173,8 @@ func isLetters(s string) bool {
 	}
 	return true
 }
+
+// HTTPClient is a plain client through the system proxy, for update checks and downloads.
+func HTTPClient(timeout time.Duration) *http.Client {
+	return client(SystemProxy(), timeout, "tcp")
+}

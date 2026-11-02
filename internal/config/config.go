@@ -64,6 +64,7 @@ type Config struct {
 	CheckIPv6     bool     `yaml:"check_ipv6"`
 	IPv6Services  []string `yaml:"ipv6_services"`
 	MenuBar       string   `yaml:"menubar"`
+	UpdateCheck   bool     `yaml:"update_check"`
 	Language      string   `yaml:"language"`
 	Notifications bool     `yaml:"notifications"`
 }
@@ -95,6 +96,7 @@ func Default() *Config {
 		CheckIPv6:             true,
 		IPv6Services:          append([]string(nil), DefaultIPv6Services...),
 		MenuBar:               "ip",
+		UpdateCheck:           true,
 		Language:              "auto",
 		Notifications:         true,
 	}

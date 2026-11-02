@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"slices"
@@ -14,6 +15,7 @@ import (
 	"github.com/ef1m03/kordon/internal/config"
 	"github.com/ef1m03/kordon/internal/guard"
 	"github.com/ef1m03/kordon/internal/procs"
+	"github.com/ef1m03/kordon/internal/update"
 )
 
 const (
@@ -23,9 +25,10 @@ const (
 
 // Tray is the menu bar (macOS) / notification area (Windows, Linux) app.
 type Tray struct {
-	G       *guard.Guard
-	Version string
-	OnQuit  func()
+	G           *guard.Guard
+	Version     string
+	OnQuit      func()
+	UpdateCheck bool
 
 	mu       sync.Mutex
 	lastIcon string
@@ -44,6 +47,8 @@ type Tray struct {
 	mSettings, mLog, mAutostart             *systray.MenuItem
 	mBar, mBarIP, mBarCountry, mBarIcon     *systray.MenuItem
 	mAbout, mStudio, mQuit                  *systray.MenuItem
+	mUpdate                                 *systray.MenuItem
+	latest                                  update.Release
 }
 
 // Run blocks on the main thread until Quit.
@@ -53,6 +58,8 @@ func (t *Tray) onReady() {
 	systray.SetTooltip("Kordon")
 	t.setIcon(guard.Snapshot{Config: config.Default()})
 
+	t.mUpdate = systray.AddMenuItem("", "")
+	t.mUpdate.Hide()
 	t.mStatus = systray.AddMenuItem(T("starting"), "")
 	t.mStatus.Disable()
 	t.mNow = systray.AddMenuItem(T("now.unknown"), "")
@@ -122,6 +129,9 @@ func (t *Tray) onReady() {
 	t.G.OnChange(t.render)
 	t.render(t.G.Snapshot(time.Now()), nil)
 	go t.loop()
+	if t.UpdateCheck {
+		go t.updateLoop()
+	}
 }
 
 func (t *Tray) loop() {
@@ -171,6 +181,10 @@ func (t *Tray) loop() {
 			setBar("country")
 		case <-t.mBarIcon.ClickedCh:
 			setBar("icon")
+		case <-t.mUpdate.ClickedCh:
+			if t.installUpdate() {
+				return
+			}
 		case <-t.mAbout.ClickedCh:
 			_ = app.OpenURL(app.RepoURL)
 		case <-t.mStudio.ClickedCh:
@@ -183,6 +197,61 @@ func (t *Tray) loop() {
 			return
 		}
 	}
+}
+
+// updateLoop checks GitHub a minute after start and then once a day.
+func (t *Tray) updateLoop() {
+	time.Sleep(time.Minute)
+	notified := ""
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		rel, err := update.Latest(ctx)
+		cancel()
+		if err == nil && update.Newer(t.Version, rel.Version()) {
+			t.mu.Lock()
+			t.latest = rel
+			t.mu.Unlock()
+			t.mUpdate.SetTitle("⬆ " + T("update.available", rel.Version()))
+			t.mUpdate.Enable()
+			t.mUpdate.Show()
+			if notified != rel.Version() {
+				notified = rel.Version()
+				app.Notify(T("update.t", rel.Version()), T("update.b", rel.Version()))
+				app.Logf("доступна версия %s", rel.Version())
+			}
+		}
+		time.Sleep(24 * time.Hour)
+	}
+}
+
+// installUpdate replaces Kordon with the new version and restarts it; true means we're exiting.
+func (t *Tray) installUpdate() bool {
+	t.mu.Lock()
+	rel := t.latest
+	t.mu.Unlock()
+	if rel.Tag == "" {
+		return false
+	}
+	t.mUpdate.SetTitle(T("update.installing", rel.Version()))
+	t.mUpdate.Disable()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	restart, err := update.Install(ctx, rel)
+	if err != nil {
+		app.Logf("обновление не установилось: %v", err)
+		app.Notify(T("update.failed.t"), T("update.failed.b", err))
+		_ = app.OpenURL(rel.Page)
+		t.mUpdate.SetTitle("⬆ " + T("update.available", rel.Version()))
+		t.mUpdate.Enable()
+		return false
+	}
+	app.Logf("установлена версия %s, перезапуск", rel.Version())
+	if t.OnQuit != nil {
+		t.OnQuit() // un-freeze apps before handing over
+	}
+	_ = restart()
+	systray.Quit()
+	return true
 }
 
 func setChecked(it *systray.MenuItem, on bool) {
