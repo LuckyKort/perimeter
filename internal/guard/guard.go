@@ -34,10 +34,12 @@ const (
 type Reason int
 
 const (
-	NoReason Reason = iota
-	NetChanged
-	IPNotAllowed
-	Offline
+	NoReason     Reason = iota
+	NetChanged          // routine re-check after a network change
+	IPNotAllowed        // the public IPv4 is not on the allow-list
+	Offline             // no internet
+	IPv6Leak            // IPv4 is fine, but there is a public IPv6 that isn't allowed
+	Unconfirmed         // services disagree about the IP, or too few answered
 )
 
 const (
@@ -52,14 +54,17 @@ const (
 const Forever = time.Duration(1<<63 - 1)
 
 type ProbeResult struct {
-	IP, Country string
-	Err         error
+	IP, Country   string
+	Votes         int      // how many IP services agreed on IP
+	Others        []string // other addresses some services reported
+	IP6, Country6 string   // public IPv6, empty if there is none
+	Err           error
 }
 
 type Deps struct {
 	Fingerprint func() string
 	// StartProbe begins an IP check in the background; its result must come back through HandleProbe.
-	StartProbe func(services []string)
+	StartProbe func(c *config.Config)
 	Procs      procs.Controller
 	SaveConfig func(*config.Config) error
 	Self       int
@@ -75,6 +80,9 @@ type Guard struct {
 	reason       Reason
 	since        time.Time // when Suspect/Blocked began
 	ip, country  string
+	ip6, cc6     string
+	votes        int
+	others       []string
 	offline      bool
 	lastFP       string
 	nextCheck    time.Time
@@ -168,7 +176,7 @@ func (g *Guard) Step(now time.Time) {
 	if !g.probing && !now.Before(g.nextCheck) {
 		g.probing = true
 		g.probeStarted = now
-		g.d.StartProbe(slices.Clone(g.cfg.IPServices))
+		g.d.StartProbe(g.cfg.Clone())
 	}
 
 	if g.status == Suspect && now.Sub(g.since) >= g.cfg.Grace.D() {
@@ -189,7 +197,7 @@ func (g *Guard) HandleProbe(now time.Time, r ProbeResult) {
 		if !g.offline {
 			g.emit(now, Event{Kind: EvOffline})
 		}
-		g.offline, g.ip, g.country = true, "", ""
+		g.offline, g.ip, g.country, g.ip6, g.cc6, g.votes, g.others = true, "", "", "", "", 0, nil
 		g.nextCheck = now.Add(FastCheck)
 		if g.paused(now) {
 			return
@@ -211,10 +219,14 @@ func (g *Guard) HandleProbe(now time.Time, r ProbeResult) {
 		g.emit(now, Event{Kind: EvIPChanged, IP: r.IP, Country: r.Country})
 	}
 	g.offline, g.ip, g.country = false, r.IP, r.Country
+	g.ip6, g.cc6, g.votes, g.others = r.IP6, r.Country6, r.Votes, r.Others
 
 	if g.cfg.Allow.IsEmpty() {
 		// First run: whatever network the user installed Kordon on is the right one.
 		g.cfg.Allow.AddIP(r.IP)
+		if r.IP6 != "" {
+			g.cfg.Allow.AddIP(r.IP6)
+		}
 		g.save()
 		g.emit(now, Event{Kind: EvAutoAllowed, IP: r.IP, Country: r.Country, Notify: true})
 	}
@@ -231,21 +243,38 @@ func (g *Guard) reevaluate(now time.Time) {
 		g.nextCheck = now.Add(g.cfg.CheckInterval.D())
 		return
 	}
-	if g.cfg.Allow.Matches(g.ip, g.country) {
+	why := g.verdict()
+	if why == NoReason {
 		g.toOK(now)
 		g.nextCheck = now.Add(g.cfg.CheckInterval.D())
 		return
 	}
 	switch g.status {
 	case OK, Starting:
-		g.toSuspect(now, IPNotAllowed)
+		g.toSuspect(now, why)
 	case Suspect:
-		if g.reason != IPNotAllowed {
-			g.reason = IPNotAllowed
+		if g.reason != why {
+			g.reason = why
 			g.announceFrozen(now)
 		}
+	case Blocked:
+		g.reason = why
 	}
 	g.nextCheck = now.Add(FastCheck)
+}
+
+// verdict says why the current network is not trusted, or NoReason if it is.
+func (g *Guard) verdict() Reason {
+	if !g.cfg.Allow.Matches(g.ip, g.country) {
+		return IPNotAllowed
+	}
+	if g.votes < g.cfg.Need() || len(g.others) > 0 {
+		return Unconfirmed
+	}
+	if g.cfg.CheckIPv6 && g.ip6 != "" && !g.cfg.Allow.Matches(g.ip6, g.cc6) {
+		return IPv6Leak
+	}
+	return NoReason
 }
 
 func (g *Guard) toOK(now time.Time) {
@@ -274,7 +303,7 @@ func (g *Guard) announceFrozen(now time.Time) {
 	if g.reason == NetChanged {
 		return
 	}
-	g.emit(now, Event{Kind: EvFrozen, Reason: g.reason, IP: g.ip, Country: g.country,
+	g.emit(now, Event{Kind: EvFrozen, Reason: g.reason, IP: g.ip, Country: g.country, IP6: g.ip6, Country6: g.cc6, Others: g.others,
 		Apps: procs.AppNames(mapValues(g.frozen)), Dur: g.cfg.Grace.D(), Notify: len(g.frozen) > 0})
 }
 
@@ -286,7 +315,7 @@ func (g *Guard) toBlocked(now time.Time) {
 		g.closing[pid] = now
 	}
 	g.frozen = map[int]procs.Proc{}
-	g.emit(now, Event{Kind: EvBlocked, Reason: g.reason, IP: g.ip, Country: g.country, Apps: apps, Notify: len(apps) > 0})
+	g.emit(now, Event{Kind: EvBlocked, Reason: g.reason, IP: g.ip, Country: g.country, IP6: g.ip6, Country6: g.cc6, Others: g.others, Apps: apps, Notify: len(apps) > 0})
 }
 
 // releaseUntargeted resumes frozen processes of apps that are no longer protected.
@@ -390,7 +419,14 @@ func (g *Guard) AllowCurrentIP(now time.Time) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	defer g.publish(now)
-	if g.ip == "" || !g.cfg.Allow.AddIP(g.ip) {
+	if g.ip == "" {
+		return false
+	}
+	added := g.cfg.Allow.AddIP(g.ip)
+	if g.ip6 != "" && g.cfg.Allow.AddIP(g.ip6) {
+		added = true
+	}
+	if !added {
 		return false
 	}
 	g.save()
@@ -403,7 +439,14 @@ func (g *Guard) AllowCurrentCountry(now time.Time) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	defer g.publish(now)
-	if g.country == "" || !g.cfg.Allow.AddCountry(g.country) {
+	if g.country == "" {
+		return false
+	}
+	added := g.cfg.Allow.AddCountry(g.country)
+	if g.ip6 != "" && g.cfg.Allow.AddCountry(g.cc6) {
+		added = true
+	}
+	if !added {
 		return false
 	}
 	g.save()

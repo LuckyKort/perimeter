@@ -51,6 +51,10 @@ func run(tray bool) {
 	if err := os.MkdirAll(app.Dir(), 0o755); err != nil {
 		fatal(err)
 	}
+	ui.Lang = app.Language("auto")
+	if supervise() {
+		return
+	}
 	// One instance only. A second one (double-click, autostart) just says where the first is.
 	lock := flock.New(app.LockPath())
 	if ok, _ := lock.TryLock(); !ok {
@@ -165,12 +169,18 @@ https://github.com/ef1m03/kordon
 func status() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	ip, err := netwatch.PublicIP(ctx, config.DefaultIPServices, 4*time.Second)
+	geo := netwatch.NewGeo()
+	r, err := netwatch.PublicIP(ctx, config.DefaultIPServices, 4*time.Second, false, 2)
 	if err != nil {
 		fmt.Println("IP:      -", "(offline)")
 	} else {
-		cc := netwatch.NewGeo().Country(ctx, ip, 4*time.Second)
-		fmt.Println("IP:     ", ui.IPWithCountry(ip, cc))
+		fmt.Println("IP:     ", ui.IPWithCountry(r.IP, geo.Country(ctx, r.IP, 4*time.Second)))
+		if len(r.Others) > 0 {
+			fmt.Println("         other services say:", strings.Join(r.Others, ", "))
+		}
+	}
+	if r6, err := netwatch.PublicIP(ctx, config.DefaultIPv6Services, 4*time.Second, true, 1); err == nil {
+		fmt.Println("IPv6:   ", ui.IPWithCountry(r6.IP, geo.Country(ctx, r6.IP, 4*time.Second)))
 	}
 	s, err := app.ReadState()
 	running := err == nil && processAlive(s.PID) && time.Since(s.Updated) < 24*time.Hour
@@ -192,12 +202,16 @@ func allow(cfg *config.Config, args []string) error {
 	case len(args) == 0:
 		ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 		defer cancel()
-		ip, err := netwatch.PublicIP(ctx, cfg.IPServices, 4*time.Second)
+		r, err := netwatch.PublicIP(ctx, cfg.IPServices, 4*time.Second, false, cfg.Need())
 		if err != nil {
 			return errors.New("no internet - nothing to allow")
 		}
-		cfg.Allow.AddIP(ip)
-		what = ip
+		cfg.Allow.AddIP(r.IP)
+		what = r.IP
+		if r6, err := netwatch.PublicIP(ctx, cfg.IPv6Services, 4*time.Second, true, 1); err == nil && cfg.CheckIPv6 {
+			cfg.Allow.AddIP(r6.IP)
+			what += ", " + r6.IP
+		}
 	case len(args[0]) == 2 && !strings.ContainsAny(args[0], ".:/"):
 		cfg.Allow.AddCountry(args[0])
 		what = strings.ToUpper(args[0])

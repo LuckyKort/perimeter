@@ -59,7 +59,7 @@ func newHarness(t *testing.T, allow ...string) *harness {
 	cfg.Allow.IPs = allow
 	h.g = New(cfg, Deps{
 		Fingerprint: func() string { return h.fp },
-		StartProbe:  func([]string) { h.probes++ },
+		StartProbe:  func(*config.Config) { h.probes++ },
 		Procs:       h.p,
 		SaveConfig:  func(c *config.Config) error { h.saved = c; return nil },
 	})
@@ -68,9 +68,12 @@ func newHarness(t *testing.T, allow ...string) *harness {
 }
 
 func (h *harness) step(d time.Duration) { h.now = h.now.Add(d); h.g.Step(h.now) }
-func (h *harness) probe(ip, cc string)  { h.g.HandleProbe(h.now, ProbeResult{IP: ip, Country: cc}) }
-func (h *harness) offline()             { h.g.HandleProbe(h.now, ProbeResult{Err: errors.New("offline")}) }
-func (h *harness) status() Status       { return h.g.Snapshot(h.now).Status }
+func (h *harness) probe(ip, cc string) {
+	h.g.HandleProbe(h.now, ProbeResult{IP: ip, Country: cc, Votes: 2})
+}
+func (h *harness) probeFull(r ProbeResult) { h.g.HandleProbe(h.now, r) }
+func (h *harness) offline()                { h.g.HandleProbe(h.now, ProbeResult{Err: errors.New("offline")}) }
+func (h *harness) status() Status          { return h.g.Snapshot(h.now).Status }
 
 func (h *harness) want(s Status) {
 	h.t.Helper()
@@ -325,11 +328,11 @@ func TestProbeScheduling(t *testing.T) {
 		t.Fatal("second probe started while the first is running")
 	}
 	h.probe("64.137.54.87", "NL")
-	h.step(5 * time.Second)
+	h.step(3 * time.Second)
 	if h.probes != 1 {
 		t.Fatal("probe before check_interval")
 	}
-	h.step(6 * time.Second)
+	h.step(3 * time.Second)
 	if h.probes != 2 {
 		t.Fatalf("no probe after check_interval, probes = %d", h.probes)
 	}
@@ -356,4 +359,65 @@ func TestConfigEditResumesWithNotice(t *testing.T) {
 	if !h.had(EvResumed) {
 		t.Fatal("allowing via config.yaml must say the app is running again")
 	}
+}
+
+func TestIPv6Leak(t *testing.T) {
+	h := newHarness(t)
+	h.g.cfg.Allow.Countries = []string{"NL"}
+	h.step(0)
+	// The VPN tunnels IPv4 only; IPv6 goes out directly from Russia.
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, IP6: "2a02:2698:1:2::5", Country6: "RU"})
+	h.want(Suspect)
+	if s := h.g.Snapshot(h.now); s.Reason != IPv6Leak || s.Allowed() {
+		t.Fatalf("reason = %v, allowed = %v", s.Reason, s.Allowed())
+	}
+	if !h.p.frozen[claude.PID] {
+		t.Fatal("not frozen on IPv6 leak")
+	}
+	// IPv6 through the VPN too: fine.
+	h.step(time.Second)
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, IP6: "2a0e:1c80:1::7", Country6: "NL"})
+	h.want(OK)
+	// IPv6 check off: the leak is ignored.
+	h.g.cfg.CheckIPv6 = false
+	h.step(time.Second)
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, IP6: "2a02:2698:1:2::5", Country6: "RU"})
+	h.want(OK)
+}
+
+func TestFirstRunAllowsIPv6Network(t *testing.T) {
+	h := newHarness(t)
+	h.step(0)
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, IP6: "2a0e:1c80:1:2:aaaa:bbbb:cccc:dddd", Country6: "NL"})
+	h.want(OK)
+	if got := h.saved.Allow.IPs; len(got) != 2 || got[1] != "2a0e:1c80:1:2::/64" {
+		t.Fatalf("allowed = %v", got)
+	}
+	// A new privacy address in the same /64 is still allowed.
+	h.step(time.Second)
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, IP6: "2a0e:1c80:1:2:1111:2222:3333:4444"})
+	h.want(OK)
+}
+
+func TestUnconfirmedIP(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	h.step(0)
+	// Only one service answered: not enough to unfreeze.
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 1})
+	h.want(Suspect)
+	if h.g.Snapshot(h.now).Reason != Unconfirmed {
+		t.Fatal("want Unconfirmed")
+	}
+	// Two agree, but a third saw another address: looks like a leak.
+	h.step(time.Second)
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 2, Others: []string{"95.24.1.1"}})
+	h.want(Suspect)
+	h.step(time.Second)
+	h.probe("64.137.54.87", "NL")
+	h.want(OK)
+	// With a single self-hosted service, one answer is enough.
+	h.g.cfg.IPServices = []string{"https://ip.example.com"}
+	h.step(10 * time.Second)
+	h.probeFull(ProbeResult{IP: "64.137.54.87", Country: "NL", Votes: 1})
+	h.want(OK)
 }

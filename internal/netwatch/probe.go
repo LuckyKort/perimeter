@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -17,18 +18,24 @@ var ErrOffline = errors.New("offline")
 
 // client builds a fresh HTTP client for one check: no keep-alive, because a reused
 // connection stays on the old route and reports the old IP after the VPN switches;
-// the system proxy read right now; IPv4 only, since allow-lists are IPv4.
-func client(proxy *url.URL, timeout time.Duration) *http.Client {
+// the system proxy read right now; one address family, so IPv4 and IPv6 are
+// checked separately (a VPN that tunnels only IPv4 leaks the real IPv6).
+func client(proxy *url.URL, timeout time.Duration, network string) *http.Client {
 	d := &net.Dialer{Timeout: timeout}
 	tr := &http.Transport{
 		DisableKeepAlives:   true,
 		TLSHandshakeTimeout: timeout,
 		DialContext: func(ctx context.Context, _, addr string) (net.Conn, error) {
-			return d.DialContext(ctx, "tcp4", addr)
+			return d.DialContext(ctx, network, addr)
 		},
 	}
 	if proxy != nil {
 		tr.Proxy = http.ProxyURL(proxy)
+		// The proxy is usually 127.0.0.1: reach it any way, it picks the family upstream,
+		// and the answer is still filtered by family in PublicIP.
+		tr.DialContext = func(ctx context.Context, _, addr string) (net.Conn, error) {
+			return d.DialContext(ctx, "tcp", addr)
+		}
 	}
 	return &http.Client{Transport: tr, Timeout: timeout}
 }
@@ -51,28 +58,69 @@ func getText(ctx context.Context, c *http.Client, u string) (string, error) {
 	return strings.TrimSpace(string(b)), err
 }
 
-// PublicIP asks all services at once and takes the first valid IPv4 answer.
-func PublicIP(ctx context.Context, services []string, timeout time.Duration) (string, error) {
+// IPResult is what the IP services said.
+type IPResult struct {
+	IP     string   // the address most services agree on
+	Votes  int      // how many services returned it
+	Others []string // different addresses other services returned: a sign of a leak or a lying service
+}
+
+// Confirmed reports whether at least need services agree and none disagrees.
+func (r IPResult) Confirmed(need int) bool { return r.Votes >= need && len(r.Others) == 0 }
+
+// PublicIP asks all services at once and returns as soon as need of them agree.
+// v6 selects IPv6; with no IPv6 connectivity it returns ErrOffline quickly.
+func PublicIP(ctx context.Context, services []string, timeout time.Duration, v6 bool, need int) (IPResult, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	c := client(SystemProxy(), timeout)
-	res := make(chan string, len(services))
+	network := "tcp4"
+	if v6 {
+		network = "tcp6"
+	}
+	c := client(SystemProxy(), timeout, network)
+	answers := make(chan string, len(services))
 	var wg sync.WaitGroup
 	for _, s := range services {
 		wg.Add(1)
 		go func(u string) {
 			defer wg.Done()
 			t, err := getText(ctx, c, u)
-			if a, perr := netip.ParseAddr(t); err == nil && perr == nil && a.Is4() {
-				res <- a.String()
+			a, perr := netip.ParseAddr(t)
+			if err != nil || perr != nil || a.Is4() == v6 || a.Is4In6() {
+				return
 			}
+			answers <- a.String()
 		}(s)
 	}
-	go func() { wg.Wait(); close(res) }()
-	if ip, ok := <-res; ok {
-		return ip, nil
+	go func() { wg.Wait(); close(answers) }()
+
+	votes := map[string]int{}
+	for ip := range answers {
+		votes[ip]++
+		if votes[ip] >= need {
+			break
+		}
 	}
-	return "", ErrOffline
+	return tally(votes)
+}
+
+func tally(votes map[string]int) (IPResult, error) {
+	var r IPResult
+	for ip, n := range votes {
+		if n > r.Votes || (n == r.Votes && ip < r.IP) {
+			r.IP, r.Votes = ip, n
+		}
+	}
+	if r.IP == "" {
+		return r, ErrOffline
+	}
+	for ip := range votes {
+		if ip != r.IP {
+			r.Others = append(r.Others, ip)
+		}
+	}
+	sort.Strings(r.Others)
+	return r, nil
 }
 
 // Geo looks up and caches the country of an IP.
@@ -92,7 +140,8 @@ func (g *Geo) Country(ctx context.Context, ip string, timeout time.Duration) str
 	if ok {
 		return cc
 	}
-	c := client(SystemProxy(), timeout)
+	// The IP is in the URL, so the lookup may go over any route.
+	c := client(SystemProxy(), timeout, "tcp")
 	for _, f := range geoServices {
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		t, err := getText(ctx, c, strings.Replace(f, "%s", ip, 1))

@@ -30,7 +30,7 @@ func (c *osController) List() ([]Proc, error) {
 			comm, _ := os.ReadFile(dir + "/comm")
 			name = strings.TrimSpace(string(comm))
 		}
-		p := Proc{PID: pid, Name: name, Path: path}
+		p := Proc{PID: pid, PPID: parentPID(dir), Name: name, Path: path}
 		if isInterpreter(name) {
 			raw, _ := os.ReadFile(dir + "/cmdline")
 			p.Args = strings.TrimSpace(strings.ReplaceAll(string(raw), "\x00", " "))
@@ -38,4 +38,23 @@ func (c *osController) List() ([]Proc, error) {
 		out = append(out, p)
 	}
 	return out, nil
+}
+
+// parentPID reads the 4th field of /proc/<pid>/stat; the 2nd (comm) may contain spaces and ")".
+func parentPID(dir string) int {
+	b, err := os.ReadFile(dir + "/stat")
+	if err != nil {
+		return 0
+	}
+	s := string(b)
+	i := strings.LastIndexByte(s, ')')
+	if i < 0 {
+		return 0
+	}
+	f := strings.Fields(s[i+1:])
+	if len(f) < 2 {
+		return 0
+	}
+	n, _ := strconv.Atoi(f[1])
+	return n
 }

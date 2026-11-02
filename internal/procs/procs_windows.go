@@ -61,7 +61,7 @@ func (c *osController) List() ([]Proc, error) {
 			ce = cached{created: created, path: imagePath(pid)}
 			c.cache[pid] = ce
 		}
-		out = append(out, Proc{PID: pid, Name: name, Path: ce.path})
+		out = append(out, Proc{PID: pid, PPID: int(e.ParentProcessID), Name: name, Path: ce.path})
 	}
 	for pid := range c.cache {
 		if !seen[pid] {

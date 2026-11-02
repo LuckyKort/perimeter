@@ -13,6 +13,7 @@ import (
 // Proc is one running process.
 type Proc struct {
 	PID  int
+	PPID int
 	Name string // executable file name: "Claude", "claude.exe"
 	Path string // full executable path, may be empty if the OS hides it
 	Args string // command line, only collected for interpreters (node, python...)
@@ -171,19 +172,47 @@ func Targets(c *config.Config) []Target {
 }
 
 // Filter keeps the processes that belong to one of the targets and labels them.
+// Children count too, whatever their name: Claude Code runs MCP servers, curl,
+// git and shells, and those reach the network just as well as the app itself.
 func Filter(all []Proc, ts []Target, self int) []Proc {
-	var out []Proc
+	children := map[int][]int{}
+	byPID := make(map[int]Proc, len(all))
+	for _, p := range all {
+		byPID[p.PID] = p
+		if p.PPID != p.PID {
+			children[p.PPID] = append(children[p.PPID], p.PID)
+		}
+	}
+	app := map[int]string{}
+	var queue []int
 	for _, p := range all {
 		if p.PID == self || p.PID <= 1 {
 			continue
 		}
 		for _, t := range ts {
 			if t.Rule.Match(p) {
-				p.App = t.Name
-				out = append(out, p)
+				app[p.PID] = t.Name
+				queue = append(queue, p.PID)
 				break
 			}
 		}
+	}
+	for len(queue) > 0 {
+		pid := queue[0]
+		queue = queue[1:]
+		for _, c := range children[pid] {
+			if _, seen := app[c]; seen || c == self || c <= 1 {
+				continue
+			}
+			app[c] = app[pid]
+			queue = append(queue, c)
+		}
+	}
+	out := make([]Proc, 0, len(app))
+	for pid, name := range app {
+		p := byPID[pid]
+		p.App = name
+		out = append(out, p)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].PID < out[j].PID })
 	return out

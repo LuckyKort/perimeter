@@ -32,7 +32,7 @@ type Tray struct {
 	snap     guard.Snapshot
 	haveSnap bool
 
-	mStatus, mNow, mAllowed                 *systray.MenuItem
+	mStatus, mNow, mNow6, mOthers, mAllowed *systray.MenuItem
 	mAllowIP, mAllowCountry, mCheck         *systray.MenuItem
 	mPause, mP15, mP60, mPForever, mUnpause *systray.MenuItem
 	mApps                                   *systray.MenuItem
@@ -57,6 +57,12 @@ func (t *Tray) onReady() {
 	t.mStatus.Disable()
 	t.mNow = systray.AddMenuItem(T("now.unknown"), "")
 	t.mNow.Disable()
+	t.mNow6 = systray.AddMenuItem("", "")
+	t.mNow6.Disable()
+	t.mNow6.Hide()
+	t.mOthers = systray.AddMenuItem("", "")
+	t.mOthers.Disable()
+	t.mOthers.Hide()
 	t.mAllowed = systray.AddMenuItem("", "")
 	t.mAllowed.Disable()
 	systray.AddSeparator()
@@ -220,10 +226,14 @@ func (t *Tray) render(s guard.Snapshot, evs []guard.Event) {
 	default:
 		t.mNow.SetTitle(T("now", IPWithCountry(s.IP, s.Country)))
 	}
+	showIf(t.mNow6, s.IP6 != "" && cfg.CheckIPv6)
+	t.mNow6.SetTitle(T("now6", IPWithCountry(s.IP6, s.Country6)))
+	showIf(t.mOthers, len(s.Others) > 0)
+	t.mOthers.SetTitle(T("others", strings.Join(s.Others, ", ")))
 	t.mAllowed.SetTitle(T("allowed.summary", allowedSummary(cfg.Allow)))
 
 	allowed := s.Allowed()
-	showIf(t.mAllowIP, s.IP != "" && !slices.Contains(cfg.Allow.IPs, s.IP) && !s.Paused())
+	showIf(t.mAllowIP, s.IP != "" && !allowed && !s.Paused() && (s.Reason == guard.IPNotAllowed || s.Reason == guard.IPv6Leak))
 	t.mAllowIP.SetTitle(T("allow.ip", s.IP))
 	showIf(t.mAllowCountry, s.Country != "" && !slices.Contains(cfg.Allow.Countries, s.Country) && !s.Paused())
 	t.mAllowCountry.SetTitle(T("allow.country", Country(s.Country)))

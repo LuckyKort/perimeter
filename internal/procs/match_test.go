@@ -1,6 +1,7 @@
 package procs
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ef1m03/kordon/internal/config"
@@ -66,5 +67,28 @@ func TestPresetsComplete(t *testing.T) {
 				t.Errorf("preset %s has an empty rule", p.ID)
 			}
 		}
+	}
+}
+
+func TestFilterIncludesChildren(t *testing.T) {
+	cfg := config.Default()
+	all := []Proc{
+		{PID: 10, PPID: 1, Name: "Claude", Path: "/Applications/Claude.app/Contents/MacOS/Claude"},
+		{PID: 20, PPID: 10, Name: "claude"},
+		{PID: 30, PPID: 20, Name: "node", Args: "node mcp-server.js"},
+		{PID: 31, PPID: 30, Name: "curl"},
+		{PID: 40, PPID: 1, Name: "curl"},   // unrelated curl
+		{PID: 50, PPID: 50, Name: "weird"}, // self-parented, must not loop
+	}
+	got := Filter(all, Targets(cfg), 999)
+	var pids []int
+	for _, p := range got {
+		pids = append(pids, p.PID)
+		if p.App != "Claude" {
+			t.Errorf("pid %d labelled %q", p.PID, p.App)
+		}
+	}
+	if fmt.Sprint(pids) != "[10 20 30 31]" {
+		t.Fatalf("pids = %v", pids)
 	}
 }

@@ -49,7 +49,7 @@ func (c *osController) List() ([]Proc, error) {
 		if ce.path == "" {
 			name = unix.ByteSliceToString(kp.Proc.P_comm[:])
 		}
-		p := Proc{PID: pid, Name: name, Path: ce.path}
+		p := Proc{PID: pid, PPID: int(kp.Eproc.Ppid), Name: name, Path: ce.path}
 		if isInterpreter(name) {
 			p.Args = ce.args
 		}

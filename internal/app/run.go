@@ -45,15 +45,37 @@ func NewRunner(ctx context.Context, cfg *config.Config) *Runner {
 	return r
 }
 
-func (r *Runner) probe(services []string) {
+func (r *Runner) probe(c *config.Config) {
 	go func() {
-		ip, err := netwatch.PublicIP(r.ctx, services, httpTimeout)
-		cc := ""
-		if err == nil {
-			cc = r.geo.Country(r.ctx, ip, httpTimeout)
+		var res guard.ProbeResult
+		var v6 netwatch.IPResult
+		var err6 error = netwatch.ErrOffline
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var v4 netwatch.IPResult
+			v4, res.Err = netwatch.PublicIP(r.ctx, c.IPServices, httpTimeout, false, c.Need())
+			res.IP, res.Votes, res.Others = v4.IP, v4.Votes, v4.Others
+		}()
+		if c.CheckIPv6 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				// One answer is enough here: the point is to see whether IPv6 goes around the VPN.
+				v6, err6 = netwatch.PublicIP(r.ctx, c.IPv6Services, httpTimeout, true, 1)
+			}()
+		}
+		wg.Wait()
+		if res.Err == nil {
+			res.Country = r.geo.Country(r.ctx, res.IP, httpTimeout)
+		}
+		if err6 == nil {
+			res.IP6 = v6.IP
+			res.Country6 = r.geo.Country(r.ctx, v6.IP, httpTimeout)
 		}
 		select {
-		case r.results <- guard.ProbeResult{IP: ip, Country: cc, Err: err}:
+		case r.results <- res:
 		case <-r.ctx.Done():
 		}
 	}()
@@ -101,13 +123,23 @@ func (r *Runner) Run() {
 	cp := time.NewTicker(cfgPoll)
 	defer cp.Stop()
 	defer r.G.Shutdown()
-	r.G.Step(time.Now())
+	changes := netwatch.Changes(r.ctx)
+	last := time.Now()
+	r.G.Step(last)
 	for {
 		select {
 		case <-r.ctx.Done():
 			return
+		case <-changes:
+			// The OS said the network changed: react now, not on the next tick.
+			// Route sockets can be chatty, so at most one extra step per 100 ms.
+			if now := time.Now(); now.Sub(last) >= 100*time.Millisecond {
+				r.G.Step(now)
+				last = now
+			}
 		case now := <-t.C:
 			r.G.Step(now)
+			last = now
 		case res := <-r.results:
 			r.G.HandleProbe(time.Now(), res)
 		case now := <-cp.C:

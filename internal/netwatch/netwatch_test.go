@@ -85,15 +85,40 @@ func TestPublicIPFirstValidWins(t *testing.T) {
 	}))
 	defer good.Close()
 
+	good2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "64.137.54.87") }))
+	defer good2.Close()
+	liar := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "95.24.1.1") }))
+	defer liar.Close()
+
 	start := time.Now()
-	ip, err := PublicIP(context.Background(), []string{bad.URL, slow.URL, good.URL}, 4*time.Second)
-	if err != nil || ip != "64.137.54.87" {
-		t.Fatalf("got %q %v", ip, err)
+	r, err := PublicIP(context.Background(), []string{bad.URL, slow.URL, good.URL, good2.URL}, 4*time.Second, false, 2)
+	if err != nil || r.IP != "64.137.54.87" || !r.Confirmed(2) {
+		t.Fatalf("got %+v %v", r, err)
 	}
 	if time.Since(start) > time.Second {
 		t.Fatal("waited for the slow service")
 	}
-	if _, err := PublicIP(context.Background(), []string{bad.URL}, time.Second); err != ErrOffline {
+	// One honest service and one disagreeing: not confirmed.
+	r, err = PublicIP(context.Background(), []string{good.URL, liar.URL}, 2*time.Second, false, 2)
+	if err != nil || r.Confirmed(2) || len(r.Others) != 1 {
+		t.Fatalf("disagreement not reported: %+v %v", r, err)
+	}
+	// IPv4 answers don't count as IPv6.
+	if _, err := PublicIP(context.Background(), []string{good.URL}, time.Second, true, 1); err != ErrOffline {
+		t.Fatalf("v4 answer accepted as v6: %v", err)
+	}
+	if _, err := PublicIP(context.Background(), []string{bad.URL}, time.Second, false, 1); err != ErrOffline {
 		t.Fatalf("all bad: %v", err)
 	}
+}
+
+// TestChangesStarts makes sure the OS subscription opens and closes cleanly.
+func TestChangesStarts(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := Changes(ctx)
+	select {
+	case <-ch: // a change happened to arrive, fine
+	case <-time.After(200 * time.Millisecond):
+	}
+	cancel()
 }

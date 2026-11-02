@@ -100,3 +100,20 @@ func TestAllowMatches(t *testing.T) {
 		t.Fatal("Add dedup")
 	}
 }
+
+func TestAddIPv6AsNetwork(t *testing.T) {
+	var a Allow
+	if !a.AddIP("2a02:2698:1:2:aaaa::1") || a.IPs[0] != "2a02:2698:1:2::/64" {
+		t.Fatalf("%v", a.IPs)
+	}
+	if a.AddIP("2a02:2698:1:2:bbbb::2") {
+		t.Fatal("same /64 added twice")
+	}
+	if !a.Matches("2a02:2698:1:2:cccc::3", "") {
+		t.Fatal("/64 doesn't match")
+	}
+	a.IPs = []string{"10.0.0.0/8"}
+	if a.AddIP("10.1.2.3") {
+		t.Fatal("address inside an allowed subnet added again")
+	}
+}

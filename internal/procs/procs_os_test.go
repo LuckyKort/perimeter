@@ -65,6 +65,9 @@ func TestRealProcess(t *testing.T) {
 	if p.Path == "" {
 		t.Error("path is empty")
 	}
+	if p.PPID != os.Getpid() {
+		t.Errorf("ppid = %d, want %d", p.PPID, os.Getpid())
+	}
 	if !(Rule{Names: []string{p.Name}}).Match(p) {
 		t.Error("rule by name doesn't match the listed process")
 	}

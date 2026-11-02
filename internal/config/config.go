@@ -60,6 +60,9 @@ type Config struct {
 	CheckInterval         Duration `yaml:"check_interval"`
 
 	IPServices    []string `yaml:"ip_services"`
+	MinAgree      int      `yaml:"min_agree"`
+	CheckIPv6     bool     `yaml:"check_ipv6"`
+	IPv6Services  []string `yaml:"ipv6_services"`
 	MenuBar       string   `yaml:"menubar"`
 	Language      string   `yaml:"language"`
 	Notifications bool     `yaml:"notifications"`
@@ -69,6 +72,14 @@ var DefaultIPServices = []string{
 	"https://api.ipify.org",
 	"https://ipv4.icanhazip.com",
 	"https://v4.ident.me",
+	"https://checkip.amazonaws.com",
+	"https://ipinfo.io/ip",
+}
+
+var DefaultIPv6Services = []string{
+	"https://api6.ipify.org",
+	"https://ipv6.icanhazip.com",
+	"https://v6.ident.me",
 }
 
 func Default() *Config {
@@ -78,8 +89,11 @@ func Default() *Config {
 		BlockWhenOffline:      true,
 		Grace:                 Duration(20 * time.Second),
 		CloseTimeout:          Duration(5 * time.Second),
-		CheckInterval:         Duration(10 * time.Second),
+		CheckInterval:         Duration(5 * time.Second),
 		IPServices:            append([]string(nil), DefaultIPServices...),
+		MinAgree:              2,
+		CheckIPv6:             true,
+		IPv6Services:          append([]string(nil), DefaultIPv6Services...),
 		MenuBar:               "ip",
 		Language:              "auto",
 		Notifications:         true,
@@ -128,6 +142,12 @@ func (c *Config) normalize() error {
 	if len(c.IPServices) == 0 {
 		c.IPServices = append([]string(nil), DefaultIPServices...)
 	}
+	if len(c.IPv6Services) == 0 {
+		c.IPv6Services = append([]string(nil), DefaultIPv6Services...)
+	}
+	if c.MinAgree < 1 {
+		c.MinAgree = 1
+	}
 	switch c.MenuBar {
 	case "ip", "country", "icon":
 	default:
@@ -141,6 +161,12 @@ func (c *Config) normalize() error {
 	return nil
 }
 
+// Need is how many IP services must agree; never more than there are services.
+func (c *Config) Need() int { return min(c.MinAgree, len(c.IPServices)) }
+
+// Need6 is the same for IPv6.
+func (c *Config) Need6() int { return min(c.MinAgree, len(c.IPv6Services)) }
+
 // Clone returns a deep copy, so the guard and the menu never share slices.
 func (c *Config) Clone() *Config {
 	n := *c
@@ -149,6 +175,7 @@ func (c *Config) Clone() *Config {
 	n.Allow.IPs = append([]string(nil), c.Allow.IPs...)
 	n.Allow.Countries = append([]string(nil), c.Allow.Countries...)
 	n.IPServices = append([]string(nil), c.IPServices...)
+	n.IPv6Services = append([]string(nil), c.IPv6Services...)
 	return &n
 }
 

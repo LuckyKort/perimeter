@@ -18,52 +18,64 @@ var Lang = "ru"
 
 var msgs = map[string]map[string]string{
 	"ru": {
-		"starting":        "Проверяю IP…",
-		"ok":              "Защита включена",
-		"netchanged":      "Сеть изменилась, проверяю IP…",
-		"frozen.ip":       "IP не разрешён: заморожено, закрою через %s",
-		"frozen.offline":  "Нет интернета: заморожено, закрою через %s",
-		"blocked.ip":      "Заблокировано: IP не разрешён",
-		"blocked.offline": "Заблокировано: нет интернета",
-		"paused.until":    "Пауза до %s",
-		"paused.forever":  "Пауза до перезапуска Kordon",
-		"now":             "Сейчас: %s",
-		"now.offline":     "Сейчас: нет интернета",
-		"now.unknown":     "Сейчас: проверяю…",
-		"allowed.summary": "Разрешено: %s",
-		"allowed.none":    "ничего",
-		"n.ips":           "%d IP",
-		"n.countries":     "страны %s",
-		"allow.ip":        "Разрешить этот IP (%s)",
-		"allow.country":   "Разрешить всю страну: %s",
-		"check":           "Проверить IP сейчас",
-		"pause":           "Пауза",
-		"pause.15m":       "На 15 минут",
-		"pause.1h":        "На 1 час",
-		"pause.forever":   "До перезапуска",
-		"unpause":         "Снять паузу",
-		"apps":            "Защищаемые приложения",
-		"apps.running":    "Защищаемые приложения (запущено: %s)",
-		"apps.custom":     "%s (свои, в настройках)",
-		"apps.edit":       "Добавить своё приложение…",
-		"history":         "История",
-		"history.empty":   "Пока ничего не случилось",
-		"settings":        "Настройки…",
-		"log":             "Открыть журнал",
-		"autostart":       "Запускать при входе в систему",
-		"menubar":         "Показывать рядом со значком",
-		"menubar.ip":      "Страну и IP",
-		"menubar.country": "Только страну",
-		"menubar.icon":    "Ничего (для созвонов)",
-		"about":           "Kordon %s на GitHub",
-		"studio":          "Сделано в Efimov Dev · efimovdev.ru",
-		"quit":            "Выйти (защита выключится)",
-		"tip.ok":          "Kordon: защита включена",
-		"tip.frozen":      "Kordon: приложения заморожены",
-		"tip.blocked":     "Kordon: заблокировано",
-		"tip.paused":      "Kordon: пауза",
-		"sec":             "%d с",
-		"min":             "%d мин",
+		"starting":            "Проверяю IP…",
+		"ok":                  "Защита включена",
+		"netchanged":          "Сеть изменилась, проверяю IP…",
+		"frozen.ip":           "IP не разрешён: заморожено, закрою через %s",
+		"frozen.offline":      "Нет интернета: заморожено, закрою через %s",
+		"blocked.ip":          "Заблокировано: IP не разрешён",
+		"blocked.offline":     "Заблокировано: нет интернета",
+		"frozen.v6":           "IPv6 идёт мимо VPN: заморожено, закрою через %s",
+		"frozen.unconf":       "IP не подтверждён: заморожено, закрою через %s",
+		"blocked.v6":          "Заблокировано: IPv6 идёт мимо VPN",
+		"blocked.unconf":      "Заблокировано: IP не подтверждён",
+		"now6":                "IPv6: %s",
+		"others":              "Другие сервисы видят: %s",
+		"reason.v6":           "IPv6 мимо VPN",
+		"reason.unconf":       "IP не подтверждён",
+		"ev.frozen.v6.b":      "IPv4 через VPN, но IPv6 %s идёт напрямую. Если не исправится за %s, закрою.",
+		"ev.frozen.unconf.b":  "Сервисы называют разные адреса (%s), похоже на утечку. Если не прояснится за %s, закрою.",
+		"ev.blocked.v6.b":     "IPv6 %s идёт мимо VPN. Включите IPv6 в VPN или отключите его в системе.",
+		"ev.blocked.unconf.b": "Не удалось подтвердить IP: сервисы называют разные адреса (%s).",
+		"paused.until":        "Пауза до %s",
+		"paused.forever":      "Пауза до перезапуска Kordon",
+		"now":                 "Сейчас: %s",
+		"now.offline":         "Сейчас: нет интернета",
+		"now.unknown":         "Сейчас: проверяю…",
+		"allowed.summary":     "Разрешено: %s",
+		"allowed.none":        "ничего",
+		"n.ips":               "%d IP",
+		"n.countries":         "страны %s",
+		"allow.ip":            "Разрешить этот IP (%s)",
+		"allow.country":       "Разрешить всю страну: %s",
+		"check":               "Проверить IP сейчас",
+		"pause":               "Пауза",
+		"pause.15m":           "На 15 минут",
+		"pause.1h":            "На 1 час",
+		"pause.forever":       "До перезапуска",
+		"unpause":             "Снять паузу",
+		"apps":                "Защищаемые приложения",
+		"apps.running":        "Защищаемые приложения (запущено: %s)",
+		"apps.custom":         "%s (свои, в настройках)",
+		"apps.edit":           "Добавить своё приложение…",
+		"history":             "История",
+		"history.empty":       "Пока ничего не случилось",
+		"settings":            "Настройки…",
+		"log":                 "Открыть журнал",
+		"autostart":           "Запускать при входе в систему",
+		"menubar":             "Показывать рядом со значком",
+		"menubar.ip":          "Страну и IP",
+		"menubar.country":     "Только страну",
+		"menubar.icon":        "Ничего (для созвонов)",
+		"about":               "Kordon %s на GitHub",
+		"studio":              "Сделано в Efimov Dev · efimovdev.ru",
+		"quit":                "Выйти (защита выключится)",
+		"tip.ok":              "Kordon: защита включена",
+		"tip.frozen":          "Kordon: приложения заморожены",
+		"tip.blocked":         "Kordon: заблокировано",
+		"tip.paused":          "Kordon: пауза",
+		"sec":                 "%d с",
+		"min":                 "%d мин",
 
 		"ev.autoallowed":    "Разрешён текущий IP %s",
 		"ev.autoallowed.t":  "Kordon запущен",
@@ -98,56 +110,70 @@ var msgs = map[string]map[string]string{
 		"reason.net":        "сеть изменилась",
 		"cfg.error.t":       "Ошибка в настройках",
 		"cfg.error.b":       "%v. Работаю со старыми настройками.",
+		"crash.t":           "Kordon остановился",
+		"crash.b":           "Он упал несколько раз подряд. Подробности в журнале: %s. Запустите Kordon заново и напишите нам в GitHub Issues.",
 		"already.t":         "Kordon уже запущен",
 		"already.b":         "Значок в строке меню (на Windows - у часов, может прятаться под стрелкой ^).",
 	},
 	"en": {
-		"starting":        "Checking IP…",
-		"ok":              "Protection is on",
-		"netchanged":      "Network changed, checking IP…",
-		"frozen.ip":       "IP not allowed: frozen, closing in %s",
-		"frozen.offline":  "No internet: frozen, closing in %s",
-		"blocked.ip":      "Blocked: IP not allowed",
-		"blocked.offline": "Blocked: no internet",
-		"paused.until":    "Paused until %s",
-		"paused.forever":  "Paused until Kordon restarts",
-		"now":             "Now: %s",
-		"now.offline":     "Now: no internet",
-		"now.unknown":     "Now: checking…",
-		"allowed.summary": "Allowed: %s",
-		"allowed.none":    "nothing",
-		"n.ips":           "%d IP",
-		"n.countries":     "countries %s",
-		"allow.ip":        "Allow this IP (%s)",
-		"allow.country":   "Allow the whole country: %s",
-		"check":           "Check IP now",
-		"pause":           "Pause",
-		"pause.15m":       "For 15 minutes",
-		"pause.1h":        "For 1 hour",
-		"pause.forever":   "Until restart",
-		"unpause":         "Resume protection",
-		"apps":            "Protected apps",
-		"apps.running":    "Protected apps (running: %s)",
-		"apps.custom":     "%s (custom, in settings)",
-		"apps.edit":       "Add your own app…",
-		"history":         "History",
-		"history.empty":   "Nothing has happened yet",
-		"settings":        "Settings…",
-		"log":             "Open log",
-		"autostart":       "Start at login",
-		"menubar":         "Show next to the icon",
-		"menubar.ip":      "Country and IP",
-		"menubar.country": "Country only",
-		"menubar.icon":    "Nothing (for screen sharing)",
-		"about":           "Kordon %s on GitHub",
-		"studio":          "Made by Efimov Dev · efimovdev.ru",
-		"quit":            "Quit (turns protection off)",
-		"tip.ok":          "Kordon: protection is on",
-		"tip.frozen":      "Kordon: apps frozen",
-		"tip.blocked":     "Kordon: blocked",
-		"tip.paused":      "Kordon: paused",
-		"sec":             "%ds",
-		"min":             "%d min",
+		"starting":            "Checking IP…",
+		"ok":                  "Protection is on",
+		"netchanged":          "Network changed, checking IP…",
+		"frozen.ip":           "IP not allowed: frozen, closing in %s",
+		"frozen.offline":      "No internet: frozen, closing in %s",
+		"blocked.ip":          "Blocked: IP not allowed",
+		"blocked.offline":     "Blocked: no internet",
+		"frozen.v6":           "IPv6 bypasses the VPN: frozen, closing in %s",
+		"frozen.unconf":       "IP not confirmed: frozen, closing in %s",
+		"blocked.v6":          "Blocked: IPv6 bypasses the VPN",
+		"blocked.unconf":      "Blocked: IP not confirmed",
+		"now6":                "IPv6: %s",
+		"others":              "Other services see: %s",
+		"reason.v6":           "IPv6 bypasses the VPN",
+		"reason.unconf":       "IP not confirmed",
+		"ev.frozen.v6.b":      "IPv4 goes through the VPN, but IPv6 %s goes direct. If it isn't fixed within %s, I'll close it.",
+		"ev.frozen.unconf.b":  "Services report different addresses (%s), which looks like a leak. If it doesn't clear up within %s, I'll close it.",
+		"ev.blocked.v6.b":     "IPv6 %s bypasses the VPN. Enable IPv6 in your VPN or turn it off in the system.",
+		"ev.blocked.unconf.b": "Couldn't confirm the IP: services report different addresses (%s).",
+		"paused.until":        "Paused until %s",
+		"paused.forever":      "Paused until Kordon restarts",
+		"now":                 "Now: %s",
+		"now.offline":         "Now: no internet",
+		"now.unknown":         "Now: checking…",
+		"allowed.summary":     "Allowed: %s",
+		"allowed.none":        "nothing",
+		"n.ips":               "%d IP",
+		"n.countries":         "countries %s",
+		"allow.ip":            "Allow this IP (%s)",
+		"allow.country":       "Allow the whole country: %s",
+		"check":               "Check IP now",
+		"pause":               "Pause",
+		"pause.15m":           "For 15 minutes",
+		"pause.1h":            "For 1 hour",
+		"pause.forever":       "Until restart",
+		"unpause":             "Resume protection",
+		"apps":                "Protected apps",
+		"apps.running":        "Protected apps (running: %s)",
+		"apps.custom":         "%s (custom, in settings)",
+		"apps.edit":           "Add your own app…",
+		"history":             "History",
+		"history.empty":       "Nothing has happened yet",
+		"settings":            "Settings…",
+		"log":                 "Open log",
+		"autostart":           "Start at login",
+		"menubar":             "Show next to the icon",
+		"menubar.ip":          "Country and IP",
+		"menubar.country":     "Country only",
+		"menubar.icon":        "Nothing (for screen sharing)",
+		"about":               "Kordon %s on GitHub",
+		"studio":              "Made by Efimov Dev · efimovdev.ru",
+		"quit":                "Quit (turns protection off)",
+		"tip.ok":              "Kordon: protection is on",
+		"tip.frozen":          "Kordon: apps frozen",
+		"tip.blocked":         "Kordon: blocked",
+		"tip.paused":          "Kordon: paused",
+		"sec":                 "%ds",
+		"min":                 "%d min",
 
 		"ev.autoallowed":    "Allowed the current IP %s",
 		"ev.autoallowed.t":  "Kordon is running",
@@ -182,6 +208,8 @@ var msgs = map[string]map[string]string{
 		"reason.net":        "network changed",
 		"cfg.error.t":       "Settings error",
 		"cfg.error.b":       "%v. Keeping the previous settings.",
+		"crash.t":           "Kordon stopped",
+		"crash.b":           "It crashed several times in a row. Details in the log: %s. Start Kordon again and please report it on GitHub Issues.",
 		"already.t":         "Kordon is already running",
 		"already.b":         "Look for the icon in the menu bar (on Windows - by the clock, maybe under the ^ arrow).",
 	},
@@ -276,11 +304,20 @@ func StatusLine(s guard.Snapshot) string {
 			return T("netchanged")
 		case guard.Offline:
 			return T("frozen.offline", Dur(s.GraceLeft))
+		case guard.IPv6Leak:
+			return T("frozen.v6", Dur(s.GraceLeft))
+		case guard.Unconfirmed:
+			return T("frozen.unconf", Dur(s.GraceLeft))
 		}
 		return T("frozen.ip", Dur(s.GraceLeft))
 	case guard.Blocked:
-		if s.Reason == guard.Offline {
+		switch s.Reason {
+		case guard.Offline:
 			return T("blocked.offline")
+		case guard.IPv6Leak:
+			return T("blocked.v6")
+		case guard.Unconfirmed:
+			return T("blocked.unconf")
 		}
 		return T("blocked.ip")
 	}
@@ -293,6 +330,10 @@ func reasonText(r guard.Reason) string {
 		return T("reason.offline")
 	case guard.NetChanged:
 		return T("reason.net")
+	case guard.IPv6Leak:
+		return T("reason.v6")
+	case guard.Unconfirmed:
+		return T("reason.unconf")
 	}
 	return T("reason.ip")
 }
@@ -349,15 +390,25 @@ func Notification(e guard.Event) (title, body string, ok bool) {
 	case guard.EvAutoAllowed:
 		return T("ev.autoallowed.t"), T("ev.autoallowed.b", ipc), true
 	case guard.EvFrozen:
-		if e.Reason == guard.Offline {
+		switch e.Reason {
+		case guard.Offline:
 			return T("ev.frozen.t", apps), T("ev.frozen.off.b", Dur(e.Dur)), true
+		case guard.IPv6Leak:
+			return T("ev.frozen.t", apps), T("ev.frozen.v6.b", IPWithCountry(e.IP6, e.Country6), Dur(e.Dur)), true
+		case guard.Unconfirmed:
+			return T("ev.frozen.t", apps), T("ev.frozen.unconf.b", seen(e), Dur(e.Dur)), true
 		}
 		return T("ev.frozen.t", apps), T("ev.frozen.ip.b", ipc, Dur(e.Dur)), true
 	case guard.EvResumed:
 		return T("ev.resumed.t", apps), T("ev.resumed.b", ipc), true
 	case guard.EvBlocked:
-		if e.Reason == guard.Offline {
+		switch e.Reason {
+		case guard.Offline:
 			return T("ev.blocked.t", apps), T("ev.blocked.off.b"), true
+		case guard.IPv6Leak:
+			return T("ev.blocked.t", apps), T("ev.blocked.v6.b", IPWithCountry(e.IP6, e.Country6)), true
+		case guard.Unconfirmed:
+			return T("ev.blocked.t", apps), T("ev.blocked.unconf.b", seen(e)), true
 		}
 		return T("ev.blocked.t", apps), T("ev.blocked.ip.b", ipc), true
 	case guard.EvKilledNew:
@@ -366,4 +417,9 @@ func Notification(e guard.Event) (title, body string, ok bool) {
 		return T("ev.unblocked.t"), T("ev.unblocked.b", ipc), true
 	}
 	return "", "", false
+}
+
+// seen lists every address the IP services reported.
+func seen(e guard.Event) string {
+	return strings.Join(append([]string{e.IP}, e.Others...), ", ")
 }

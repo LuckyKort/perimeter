@@ -41,12 +41,31 @@ func (a Allow) Matches(ip, country string) bool {
 	return country != "" && slices.Contains(a.Countries, strings.ToUpper(country))
 }
 
+// AddIP adds an IPv4 address as is, and an IPv6 address as its /64 network:
+// IPv6 privacy extensions change the address within the /64 every day.
 func (a *Allow) AddIP(ip string) bool {
-	if slices.Contains(a.IPs, ip) {
+	if addr, err := netip.ParseAddr(ip); err == nil && addr.Is6() {
+		p, _ := addr.Prefix(64)
+		ip = p.String()
+	}
+	if slices.Contains(a.IPs, ip) || a.coveredByIPs(ip) {
 		return false
 	}
 	a.IPs = append(a.IPs, ip)
 	return true
+}
+
+func (a Allow) coveredByIPs(s string) bool {
+	p, err := ParseIPOrNet(s)
+	if err != nil {
+		return false
+	}
+	for _, have := range a.IPs {
+		if h, err := ParseIPOrNet(have); err == nil && h.Bits() <= p.Bits() && h.Contains(p.Addr()) {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Allow) AddCountry(cc string) bool {

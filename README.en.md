@@ -23,6 +23,7 @@
 | Allow a whole country, not one address | ❌ | ❌ | ✅ |
 | IP and country visible at a glance | ❌ | ❌ | ✅ |
 | Works with proxy-mode VPN clients | depends | ❌ | ✅ |
+| Catches IPv6 leaks when the VPN tunnels only IPv4 | not always | ❌ | ✅ |
 | No admin rights needed | not always | ❌ | ✅ |
 | Same tool on macOS, Windows and Linux | ❌ | ❌ | ✅ |
 
@@ -33,6 +34,10 @@
 - **Allow IPs, subnets or whole countries** - VPNs rotate addresses within a country all the time.
 - **Your IP and country always in sight**: flag and IP in the macOS menu bar, a country-code badge in the Windows tray, coloured by state.
 - **Presets**: Claude, ChatGPT, Codex, Cursor, Windsurf, GitHub Copilot, Gemini CLI, Perplexity, Telegram, Discord, Slack, Zoom, plus any app of your own.
+- **IPv6 leaks**: many VPNs tunnel only IPv4; Kordon checks both addresses.
+- **Whole process trees**: everything the app started (MCP servers, `curl`, `git` under Claude Code) is frozen too.
+- **Two independent services must agree** on the IP; any disagreement counts as a possible leak.
+- **Instant reaction** to OS network events, and a supervisor that restarts Kordon if it ever crashes.
 - **Proxy-mode VPN clients** (v2rayN, Hiddify, Clash) are handled: the IP is checked through the system proxy, the way your apps see it.
 - Pause, event history, a screen-sharing mode that hides the IP, hot-reloaded `config.yaml`.
 - No admin rights, no telemetry, open source.
@@ -69,7 +74,9 @@ allow:
   countries: ["NL", "DE"]
 grace: 20s
 close_timeout: 5s
-check_interval: 10s
+check_interval: 5s
+min_agree: 2
+check_ipv6: true
 menubar: ip   # ip, country or icon
 ```
 
@@ -77,11 +84,13 @@ CLI: `kordon status`, `kordon allow [IP|subnet|CC]`, `kordon config`, `kordon au
 
 ## What goes over the network
 
-Only two kinds of requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). No analytics, no update checks.
+Only two kinds of requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, `checkip.amazonaws.com`, `ipinfo.io/ip`; IPv6: `api6.ipify.org`, `ipv6.icanhazip.com`, `v6.ident.me`; all configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). No analytics, no update checks.
 
-## Limits
+## How safe is it
 
-Network changes are noticed within 0.5 s; a VPN switching servers without touching the adapters is caught by the IP check every 10 s. PAC proxy scripts aren't supported. On Windows, npm-installed Claude Code runs as `node.exe` and can't be told apart - use the native installer.
+Covered: IPv6 leaks, child processes, a single lying IP service, missed network changes, Kordon crashing, tampered downloads (installers check SHA-256; every build carries a GitHub attestation: `gh attestation verify <file> --repo ef1m03/kordon`).
+
+Not covered, honestly: Kordon works at the app level, not the network level - there are milliseconds between a network change and the freeze, so use your VPN's own kill switch too if you need "not a single packet". Admin processes and services aren't touched. Malware on the same machine can just stop Kordon. PAC proxy scripts aren't supported. On Windows, npm-installed Claude Code started from a terminal runs as `node.exe` - use the native installer.
 
 ## Build
 

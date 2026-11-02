@@ -14,6 +14,19 @@ ACTION="${1:-install}"
 
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
 
+# verify FILE NAME: compares FILE with the NAME line of the release's SHA256SUMS.txt,
+# so a file damaged or swapped on the way is never installed.
+verify() {
+  curl -fsSL "$BASE/SHA256SUMS.txt" -o "$1.sums"
+  want="$(grep "  $2\$" "$1.sums" | cut -d' ' -f1)"
+  if command -v sha256sum >/dev/null 2>&1; then got="$(sha256sum "$1" | cut -d' ' -f1)"
+  else got="$(shasum -a 256 "$1" | cut -d' ' -f1)"; fi
+  if [ -z "$want" ] || [ "$want" != "$got" ]; then
+    echo "Контрольная сумма $2 не совпала - файл повреждён или подменён, ничего не установлено." >&2
+    exit 1
+  fi
+}
+
 stop_running() {
   # Quitting through the menu would un-freeze apps; on update Kordon does it at its next start.
   pkill -x kordon 2>/dev/null || true
@@ -34,6 +47,7 @@ mac() {
   trap 'rm -rf "$tmp"' EXIT
   say "Скачиваю Kordon…"
   curl -fsSL "$BASE/Kordon-macos.zip" -o "$tmp/Kordon.zip"
+  verify "$tmp/Kordon.zip" Kordon-macos.zip
   stop_running
   mkdir -p "$dest"
   rm -rf "$dest/Kordon.app"
@@ -57,9 +71,13 @@ linux() {
     *) echo "Неподдерживаемая архитектура: $(uname -m)" >&2; exit 1 ;;
   esac
   mkdir -p "$bin"
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
   say "Скачиваю Kordon…"
+  curl -fsSL "$BASE/kordon-linux-$arch.tar.gz" -o "$tmp/kordon.tar.gz"
+  verify "$tmp/kordon.tar.gz" "kordon-linux-$arch.tar.gz"
   stop_running
-  curl -fsSL "$BASE/kordon-linux-$arch.tar.gz" | tar -xz -C "$bin" kordon
+  tar -xzf "$tmp/kordon.tar.gz" -C "$bin" kordon
   chmod +x "$bin/kordon"
   "$bin/kordon" autostart on
   nohup "$bin/kordon" >/dev/null 2>&1 &
