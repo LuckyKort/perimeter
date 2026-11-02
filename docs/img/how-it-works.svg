@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 300" font-family="-apple-system, Segoe UI, Roboto, sans-serif">
+  <rect width="860" height="300" rx="16" fill="#ffffff"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#6b7280"/>
+    </marker>
+  </defs>
+
+  <!-- states -->
+  <g font-size="15" font-weight="600" text-anchor="middle">
+    <rect x="40" y="105" width="180" height="76" rx="14" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="130" y="138" fill="#14532d">Работает</text>
+    <text x="130" y="160" font-size="12" font-weight="400" fill="#166534">IP разрешён</text>
+
+    <rect x="340" y="105" width="180" height="76" rx="14" fill="#ffedd5" stroke="#ea8a00" stroke-width="2"/>
+    <text x="430" y="138" fill="#7c2d12">Заморожено</text>
+    <text x="430" y="160" font-size="12" font-weight="400" fill="#9a3412">ждём разрешённый IP</text>
+
+    <rect x="640" y="105" width="180" height="76" rx="14" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+    <text x="730" y="138" fill="#7f1d1d">Закрыто</text>
+    <text x="730" y="160" font-size="12" font-weight="400" fill="#991b1b">не даст запуститься</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#a)">
+    <path d="M220 125 L336 125"/>
+    <path d="M336 165 L224 165"/>
+    <path d="M520 143 L636 143"/>
+    <path d="M730 105 C730 55 130 55 130 101"/>
+  </g>
+  <g font-size="12" fill="#374151" text-anchor="middle">
+    <text x="278" y="114">сеть или IP</text>
+    <text x="278" y="190">тот же или</text>
+    <text x="278" y="205">разрешённый IP</text>
+    <text x="578" y="132">прошло 20 с</text>
+    <text x="430" y="40">разрешённый IP вернулся - можно снова открывать</text>
+  </g>
+  <text x="430" y="262" font-size="13" fill="#6b7280" text-anchor="middle">Заморозка срабатывает за долю секунды. Вернулся нужный IP - приложение продолжает с того же места.</text>
+</svg>

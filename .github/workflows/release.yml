@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: VERSION=${GITHUB_REF_NAME} ./scripts/build-mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/Kordon-macos.zip
+
+  windows-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: VERSION=${GITHUB_REF_NAME} ./scripts/build-windows.sh
+      - name: Linux
+        run: |
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath \
+              -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o kordon ./cmd/kordon
+            tar -czf dist/kordon-linux-$arch.tar.gz kordon
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-linux
+          path: |
+            dist/*.exe
+            dist/*.tar.gz
+
+  release:
+    needs: [macos, windows-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp scripts/install.sh scripts/install.ps1 dist/
+          (cd dist && sha256sum * > SHA256SUMS.txt)
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Kordon ${GITHUB_REF_NAME}" --notes-file docs/RELEASE_NOTES.md

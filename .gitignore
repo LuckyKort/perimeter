@@ -1,0 +1,4 @@
+dist/
+build/
+*.syso
+.DS_Store

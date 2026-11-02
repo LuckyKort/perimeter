@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Vet
+        run: go vet ./...
+      # Includes TestRealProcess: freezes, resumes and closes a real process on each OS.
+      - name: Test
+        run: go test -count=1 ./...
+      - name: Race
+        if: runner.os != 'Windows'
+        run: go test -race -count=1 ./internal/...
+      - name: Build
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then ./scripts/build-mac.sh
+          elif [ "$RUNNER_OS" = "Windows" ]; then go build -ldflags "-H windowsgui" -o kordon.exe ./cmd/kordon
+          else CGO_ENABLED=0 go build -o kordon ./cmd/kordon; fi
+      - name: Smoke
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then dist/Kordon.app/Contents/MacOS/kordon version
+          elif [ "$RUNNER_OS" = "Windows" ]; then ./kordon.exe version
+          else ./kordon version; fi
