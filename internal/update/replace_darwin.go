@@ -51,8 +51,12 @@ func replace(exe, zip, dir string) (func() error, error) {
 	// The running process still has its files open, so removing the old bundle is safe.
 	return func() error {
 		// Started after we exit: the new instance needs our single-instance lock.
+		// Start the binary itself, not `open`: while the old process is still exiting,
+		// LaunchServices thinks Kordon is running and `open` only "activates" it,
+		// so nothing would start. The new one waits for our lock if we overlap.
 		// Own session: launchd kills a job's whole process group when the job exits.
-		cmd := exec.Command("/bin/sh", "-c", "sleep 1; /usr/bin/open "+shellQuote(bundle))
+		bin := filepath.Join(bundle, "Contents", "MacOS", "kordon")
+		cmd := exec.Command("/bin/sh", "-c", "sleep 1; exec "+shellQuote(bin)+" >/dev/null 2>&1")
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 		return cmd.Start()
 	}, nil
