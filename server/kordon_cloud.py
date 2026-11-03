@@ -151,6 +151,8 @@ def handle(chat, body, lang):
         with db_lock, conn() as c:
             c.execute("DELETE FROM chats WHERE chat = ?", (chat,))
         tg("sendMessage", chat_id=chat, text=text(lang, "stopped"))
+    elif body == "/id":
+        tg("sendMessage", chat_id=chat, text=f"chat id: {chat}")
     elif body == "/stats" and OWNER and str(chat) == OWNER:
         tg("sendMessage", chat_id=chat, text=stats_text())
     else:
