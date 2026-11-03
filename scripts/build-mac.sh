@@ -37,7 +37,7 @@ cat > "$APP/Contents/Info.plist" <<EOF
   <key>CFBundleVersion</key><string>$VERSION</string>
   <key>LSMinimumSystemVersion</key><string>11.0</string>
   <key>LSUIElement</key><true/>
-  <key>NSHumanReadableCopyright</key><string>ef1m03 · Efimov Dev · MIT</string>
+  <key>NSHumanReadableCopyright</key><string>ef1m03 · Efimov Dev · GPL-3.0</string>
 </dict>
 </plist>
 EOF

@@ -30,6 +30,7 @@ func StatePath() string  { return filepath.Join(Dir(), "state.json") }
 func LockPath() string   { return filepath.Join(Dir(), "kordon.lock") }
 
 const (
-	RepoURL   = "https://github.com/ef1m03/kordon"
-	StudioURL = "https://efimovdev.ru"
+	RepoURL     = "https://github.com/ef1m03/kordon"
+	StudioURL   = "https://efimovdev.ru"
+	TelegramURL = "https://t.me/efimov_dev"
 )

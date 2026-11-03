@@ -1,0 +1,15 @@
+Kordon
+Copyright (C) 2026 ef1m03 (Efimov Dev, https://efimovdev.ru)
+
+The source code is licensed under the GNU General Public License v3.0, see LICENSE.
+Versions 1.0.0 - 1.2.1 were released under the MIT license and stay available under it.
+
+The name "Kordon" and the Kordon logo are not licensed under the GPL. A modified
+version or a fork must use a different name and logo and must not present itself
+as Kordon or as an official build. Official builds come only from
+https://github.com/ef1m03/kordon/releases and carry a GitHub build attestation.
+
+Название Kordon и логотип Kordon не входят в лицензию GPL. Изменённая версия или
+форк должны называться иначе, использовать другой логотип и не выдавать себя за
+Kordon или его официальную сборку. Официальные сборки - только с
+https://github.com/ef1m03/kordon/releases, у каждой есть аттестация сборки GitHub.

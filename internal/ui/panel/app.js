@@ -42,7 +42,7 @@ const L = {
     o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Раз в сутки, ставятся только по клику",
     open_config: "Открыть config.yaml", open_log: "Открыть журнал", report: "Сообщить о проблеме", sec: "с",
     update_avail: "Доступна версия", update_btn: "Обновить", saved: "Сохранено", about_text: "Kill switch для приложений: замораживает выбранные программы, когда отваливается VPN или меняется IP. Открытый код, без телеметрии.",
-    made: "Сделано в Efimov Dev", github: "Kordon на GitHub", license: "Лицензия MIT",
+    made: "Сделано в Efimov Dev", github: "Kordon на GitHub", license: "Лицензия GPL-3.0", telegram: "Написать в Telegram",
     history_empty: "Пока ничего не случилось", paused_until: "Пауза до", paused_forever: "Пауза до перезапуска",
   },
   en: {
@@ -83,7 +83,7 @@ const L = {
     o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "Once a day, installed only when you click",
     open_config: "Open config.yaml", open_log: "Open log", report: "Report a problem", sec: "s",
     update_avail: "Version available:", update_btn: "Update", saved: "Saved", about_text: "A kill switch for apps: freezes the apps you choose when the VPN drops or your IP changes. Open source, no telemetry.",
-    made: "Made by Efimov Dev", github: "Kordon on GitHub", license: "MIT license",
+    made: "Made by Efimov Dev", github: "Kordon on GitHub", license: "GPL-3.0 license", telegram: "Message on Telegram",
     history_empty: "Nothing has happened yet", paused_until: "Paused until", paused_forever: "Paused until restart",
   },
 };
@@ -356,7 +356,7 @@ function settings() {
 function about() {
   return `<div class="card about"><img src="icon.png" alt=""><div class="big">Kordon ${esc(S.version)}</div>
     <p>${t("about_text")}</p>
-    <div class="links"><button class="btn" data-url="https://github.com/ef1m03/kordon">${t("github")}</button><button class="btn primary" data-url="https://efimovdev.ru">${t("made")}</button></div>
+    <div class="links"><button class="btn" data-url="https://github.com/ef1m03/kordon">${t("github")}</button><button class="btn" data-url="https://t.me/efimov_dev">${t("telegram")} @efimov_dev</button><button class="btn primary" data-url="https://efimovdev.ru">${t("made")}</button></div>
     <p style="font-size:12px">${t("license")} · ef1m03</p></div>`;
 }
 

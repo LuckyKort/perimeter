@@ -8,7 +8,7 @@
   <a href="https://github.com/ef1m03/kordon/releases/latest"><img src="https://img.shields.io/github/v/release/ef1m03/kordon?label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F" alt="версия"></a>
   <a href="https://github.com/ef1m03/kordon/actions/workflows/ci.yml"><img src="https://github.com/ef1m03/kordon/actions/workflows/ci.yml/badge.svg" alt="тесты"></a>
   <img src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-555" alt="macOS, Windows, Linux">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0"></a>
 </p>
 
 <p align="center">
@@ -80,7 +80,7 @@
 - **История событий** в меню и в панели, журнал в файле.
 - **«Сообщить о проблеме»** открывает заявку на GitHub с уже подставленной версией, системой и концом журнала. Все IP и MAC-адреса в нём заранее скрыты.
 - **Режим для созвонов:** рядом со значком можно показывать только страну или ничего, чтобы IP не светился при показе экрана.
-- **Без прав администратора**, без телеметрии, код открыт.
+- **Без прав администратора**, без телеметрии, код открыт (GPL-3.0).
 
 ## Как это работает
 
@@ -323,6 +323,26 @@ kordon version
 
 Если папка с Kordon недоступна для записи (например, «Программы» на рабочем Mac без прав администратора), обновление из меню не получится, и Kordon откроет страницу релиза. Тогда обновите строкой установки.
 
+## Официальные сборки
+
+Kordon скачивайте только отсюда: со страницы [релизов](https://github.com/ef1m03/kordon/releases) или строкой установки из этого README. Строка установки сама сверяет контрольную сумму.
+
+Проверить, что файл собран именно из этого репозитория, а не подменён, можно так (нужен [GitHub CLI](https://cli.github.com)):
+
+```bash
+gh attestation verify Kordon-macos.zip --repo ef1m03/kordon
+```
+
+Если Kordon предлагают скачать где-то ещё или он называется похоже, но иначе, это не наша сборка.
+
+## Лицензия
+
+Код открыт под [GPL-3.0](LICENSE): его можно читать, менять и распространять, но любая изменённая версия тоже должна остаться открытой под GPL-3.0 и указывать, что сделана на основе Kordon. Закрыть код и выдать за своё нельзя.
+
+**Название «Kordon» и логотип не входят в лицензию** ([NOTICE](NOTICE)): форк должен называться по-другому и не выдавать себя за Kordon.
+
+Версии 1.0.0-1.2.1 вышли под MIT и для них так и остаётся.
+
 ## Удаление
 
 macOS и Linux:
@@ -369,5 +389,6 @@ CGO_ENABLED=0 go build ./cmd/kordon   # Linux
 
 <p align="center">
   Автор - <a href="https://github.com/ef1m03">ef1m03</a>. Сделано в <a href="https://efimovdev.ru"><b>Efimov Dev</b></a> - разрабатываем сайты, сервисы и приложения.<br>
-  Нашли ошибку или есть идея - <a href="https://github.com/ef1m03/kordon/issues">пишите в Issues</a>. Лицензия <a href="LICENSE">MIT</a>.
+  Нашли ошибку или есть идея - пишите в Telegram <a href="https://t.me/efimov_dev"><b>@efimov_dev</b></a>.<br>
+  Лицензия <a href="LICENSE">GPL-3.0</a>. Название и логотип Kordon - <a href="NOTICE">не входят в лицензию</a>.
 </p>

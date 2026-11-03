@@ -6,7 +6,7 @@
   <a href="https://github.com/ef1m03/kordon/releases/latest"><img src="https://img.shields.io/github/v/release/ef1m03/kordon" alt="release"></a>
   <a href="https://github.com/ef1m03/kordon/actions/workflows/ci.yml"><img src="https://github.com/ef1m03/kordon/actions/workflows/ci.yml/badge.svg" alt="tests"></a>
   <img src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-555" alt="macOS, Windows, Linux">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0"></a>
   · <a href="README.md">Русский</a>
 </p>
 
@@ -116,4 +116,5 @@ CGO_ENABLED=0 go build ./cmd/kordon
 
 ---
 
-<p align="center">By <a href="https://github.com/ef1m03">ef1m03</a>. Made at <a href="https://efimovdev.ru"><b>Efimov Dev</b></a>. MIT license.</p>
+<p align="center">By <a href="https://github.com/ef1m03">ef1m03</a>. Made at <a href="https://efimovdev.ru"><b>Efimov Dev</b></a>. Questions and ideas: Telegram <a href="https://t.me/efimov_dev">@efimov_dev</a>.<br>
+License: <a href="LICENSE">GPL-3.0</a> (versions up to 1.2.1: MIT). The Kordon name and logo are <a href="NOTICE">not covered by the license</a>; official builds only from <a href="https://github.com/ef1m03/kordon/releases">Releases</a> (<code>gh attestation verify &lt;file&gt; --repo ef1m03/kordon</code>).</p>

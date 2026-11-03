@@ -377,7 +377,7 @@ func (s *Server) apply(a action) error {
 	case "report":
 		return app.OpenURL(app.ReportURL(s.Version))
 	case "open_url":
-		if a.Value == app.RepoURL || a.Value == app.StudioURL || strings.HasPrefix(a.Value, app.RepoURL+"/") {
+		if a.Value == app.RepoURL || a.Value == app.StudioURL || a.Value == app.TelegramURL || strings.HasPrefix(a.Value, app.RepoURL+"/") {
 			return app.OpenURL(a.Value)
 		}
 		return errors.New("unknown link")
