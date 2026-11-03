@@ -92,3 +92,24 @@ func TestFilterIncludesChildren(t *testing.T) {
 		t.Fatalf("pids = %v", pids)
 	}
 }
+
+// Kordon's own children (the panel window is Edge on Windows) are never
+// frozen, even when that browser is protected.
+func TestFilterSkipsOwnChildren(t *testing.T) {
+	edge := Rule{Names: []string{"msedge"}}
+	all := []Proc{
+		{PID: 10, PPID: 1, Name: "kordon.exe"},
+		{PID: 11, PPID: 10, Name: "msedge.exe"}, // panel window
+		{PID: 12, PPID: 11, Name: "msedge.exe"}, // its renderer
+		{PID: 20, PPID: 1, Name: "msedge.exe"},  // the user's Edge
+		{PID: 21, PPID: 20, Name: "msedge.exe"},
+	}
+	got := Filter(all, []Target{{ID: "edge", Name: "Edge", Rule: edge}}, 10)
+	var pids []int
+	for _, p := range got {
+		pids = append(pids, p.PID)
+	}
+	if len(pids) != 2 || pids[0] != 20 || pids[1] != 21 {
+		t.Fatalf("frozen %v, want [20 21]", pids)
+	}
+}

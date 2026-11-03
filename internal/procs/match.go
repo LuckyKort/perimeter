@@ -31,6 +31,7 @@ type Rule struct {
 
 type Preset struct {
 	ID, Name string
+	Browser  bool // frozen whole, with every tab; listed separately
 	Darwin   Rule
 	Windows  Rule
 	Linux    Rule
@@ -97,6 +98,29 @@ var Presets = []Preset{
 		Darwin:  Rule{Paths: []string{"/zoom.us.app/"}},
 		Windows: Rule{Names: []string{"Zoom"}},
 		Linux:   Rule{Names: []string{"zoom"}}},
+
+	// Browsers, for AI used on the web. Safari isn't here: its tabs run in
+	// WebKit system processes that also serve Mail and other apps.
+	{ID: "chrome", Name: "Google Chrome", Browser: true,
+		Darwin:  Rule{Paths: []string{"/Google Chrome.app/"}},
+		Windows: Rule{Names: []string{"chrome"}},
+		Linux:   Rule{Names: []string{"chrome"}}},
+	{ID: "yandex", Name: "Яндекс Браузер", Browser: true,
+		Darwin:  Rule{Paths: []string{"/Yandex.app/"}},
+		Windows: Rule{Paths: []string{`\Yandex\YandexBrowser\`}},
+		Linux:   Rule{Paths: []string{"/opt/yandex/browser"}}},
+	{ID: "edge", Name: "Microsoft Edge", Browser: true,
+		Darwin:  Rule{Paths: []string{"/Microsoft Edge.app/"}},
+		Windows: Rule{Names: []string{"msedge"}},
+		Linux:   Rule{Names: []string{"msedge"}}},
+	{ID: "brave", Name: "Brave", Browser: true,
+		Darwin:  Rule{Paths: []string{"/Brave Browser.app/"}},
+		Windows: Rule{Names: []string{"brave"}},
+		Linux:   Rule{Names: []string{"brave"}}},
+	{ID: "firefox", Name: "Firefox", Browser: true,
+		Darwin:  Rule{Paths: []string{"/Firefox.app/"}},
+		Windows: Rule{Names: []string{"firefox"}},
+		Linux:   Rule{Names: []string{"firefox", "firefox-bin"}}},
 }
 
 func PresetByID(id string) (Preset, bool) {
@@ -186,10 +210,21 @@ func Filter(all []Proc, ts []Target, self int) []Proc {
 			children[p.PPID] = append(children[p.PPID], p.PID)
 		}
 	}
+	// Kordon's own children (the panel window: Edge on Windows) are never
+	// frozen, even when the same app is protected.
+	mine := map[int]bool{}
+	if self > 1 {
+		for q := []int{self}; len(q) > 0; q = q[1:] {
+			if !mine[q[0]] {
+				mine[q[0]] = true
+				q = append(q, children[q[0]]...)
+			}
+		}
+	}
 	app := map[int]Target{}
 	var queue []int
 	for _, p := range all {
-		if p.PID == self || p.PID <= 1 {
+		if mine[p.PID] || p.PID <= 1 {
 			continue
 		}
 		for _, t := range ts {
@@ -204,7 +239,7 @@ func Filter(all []Proc, ts []Target, self int) []Proc {
 		pid := queue[0]
 		queue = queue[1:]
 		for _, c := range children[pid] {
-			if _, seen := app[c]; seen || c == self || c <= 1 {
+			if _, seen := app[c]; seen || mine[c] || c <= 1 {
 				continue
 			}
 			app[c] = app[pid]

@@ -103,7 +103,10 @@ func (t *Tray) onReady() {
 
 	t.mApps = systray.AddMenuItem(T("apps"), "")
 	t.appItems = map[string]*systray.MenuItem{}
-	for _, p := range procs.Presets {
+	for i, p := range procs.Presets {
+		if p.Browser && !procs.Presets[i-1].Browser {
+			t.mApps.AddSeparator()
+		}
 		t.appItems[p.ID] = t.mApps.AddSubMenuItemCheckbox(p.Name, "", false)
 	}
 	t.mApps.AddSeparator()

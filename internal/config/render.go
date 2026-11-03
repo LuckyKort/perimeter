@@ -25,7 +25,8 @@ var templates = map[string]tpl{
 		header: "# Kordon - настройки. Сохраните файл, и Kordon подхватит изменения сам, перезапуск не нужен.\n" +
 			"# Справка: https://github.com/ef1m03/kordon#настройки",
 		apps: "# Какие приложения защищать. Готовые: claude, chatgpt, codex, cursor, windsurf,\n" +
-			"# copilot, gemini, perplexity, telegram, discord, slack, zoom.",
+			"# copilot, gemini, perplexity, telegram, discord, slack, zoom.\n" +
+			"# Браузеры (замирают целиком, со всеми вкладками): chrome, yandex, edge, brave, firefox.",
 		appsList: "# Список и как их ищет Kordon - в меню «Защищаемые приложения».",
 		custom: "# Свои приложения. match - имя файла (myapp, myapp.exe) или часть пути (/MyApp.app/),\n" +
 			"# для скриптов - часть командной строки с префиксом args: (args:my-cli.js).\n" +
@@ -55,7 +56,8 @@ var templates = map[string]tpl{
 		header: "# Kordon settings. Save the file and Kordon picks the changes up, no restart needed.\n" +
 			"# Docs: https://github.com/ef1m03/kordon/blob/main/README.en.md#settings",
 		apps: "# Which apps to protect. Built-in: claude, chatgpt, codex, cursor, windsurf,\n" +
-			"# copilot, gemini, perplexity, telegram, discord, slack, zoom.",
+			"# copilot, gemini, perplexity, telegram, discord, slack, zoom.\n" +
+			"# Browsers (frozen whole, with every tab): chrome, yandex, edge, brave, firefox.",
 		appsList: "# See the \"Protected apps\" menu for how each one is matched.",
 		custom: "# Your own apps. match is a file name (myapp, myapp.exe) or part of a path (/MyApp.app/),\n" +
 			"# for scripts - part of the command line prefixed with args: (args:my-cli.js).\n" +

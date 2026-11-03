@@ -169,6 +169,7 @@ type appJSON struct {
 	ID      string    `json:"id"`
 	Name    string    `json:"name"`
 	Custom  bool      `json:"custom"`
+	Browser bool      `json:"browser"`
 	Match   []string  `json:"match,omitempty"`
 	Enabled bool      `json:"enabled"`
 	Running bool      `json:"running"`
@@ -200,7 +201,7 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 	}
 	var apps []appJSON
 	for _, p := range procs.Presets {
-		a := appJSON{ID: p.ID, Name: p.Name, Enabled: slices.Contains(cfg.Apps, p.ID), Running: running[p.ID], Status: groupStatus[p.Name]}
+		a := appJSON{ID: p.ID, Name: p.Name, Browser: p.Browser, Enabled: slices.Contains(cfg.Apps, p.ID), Running: running[p.ID], Status: groupStatus[p.Name]}
 		if r, ok := cfg.AppRules[p.ID]; ok {
 			rj := ruleOf(r)
 			a.Rule = &rj

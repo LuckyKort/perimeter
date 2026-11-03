@@ -23,7 +23,7 @@ const L = {
     pause: "Пауза", pause15: "15 минут", pause60: "1 час", pauseF: "До перезапуска", unpause: "Снять паузу",
     others: "Другие сервисы видят", running: "запущено", not_running: "не запущено", frozen: "заморожено", blocked: "закрыто", ok: "работает",
     own_rules: "Свои правила", shared_rules: "Общие правила", rule_hint: "Где можно работать именно этому приложению. Пусто - значит общие правила со страницы «Разрешено».",
-    remove_rule: "Вернуть общие правила", custom: "Свои приложения", add_custom: "Добавить", custom_name: "Название", custom_match: "Имя файла или часть пути, через запятую",
+    remove_rule: "Вернуть общие правила", browsers: "Браузеры", browsers_hint: "Для ИИ в браузере. Браузер замирает целиком, со всеми вкладками, поэтому удобнее открывать ИИ в отдельном браузере и защищать только его.", browsers_safari: " Safari защитить нельзя: его вкладки работают в общих системных процессах macOS.", custom: "Свои приложения", add_custom: "Добавить", custom_name: "Название", custom_match: "Имя файла или часть пути, через запятую",
     remove: "Удалить", ips: "IP и подсети", countries: "Страны", add: "Добавить", ip_ph: "64.137.54.87 или 64.137.54.0/24",
     country_ph: "Начните вводить страну", no_ips: "Нет разрешённых IP", no_countries: "Нет разрешённых стран",
     current_net: "Текущая сеть", router: "Роутер", net_name: "Название, например «Дом»", no_trusted: "Доверенных сетей пока нет",
@@ -64,7 +64,7 @@ const L = {
     pause: "Pause", pause15: "15 minutes", pause60: "1 hour", pauseF: "Until restart", unpause: "Resume",
     others: "Other services see", running: "running", not_running: "not running", frozen: "frozen", blocked: "closed", ok: "running",
     own_rules: "Own rules", shared_rules: "Shared rules", rule_hint: "Where this app may run. Empty means the shared rules from the Allowed page.",
-    remove_rule: "Use shared rules", custom: "Your apps", add_custom: "Add", custom_name: "Name", custom_match: "File name or part of the path, comma-separated",
+    remove_rule: "Use shared rules", browsers: "Browsers", browsers_hint: "For AI on the web. A browser freezes whole, with every tab, so it is easier to use a separate browser for AI and protect only that one.", browsers_safari: " Safari can't be protected: its tabs run in shared macOS system processes.", custom: "Your apps", add_custom: "Add", custom_name: "Name", custom_match: "File name or part of the path, comma-separated",
     remove: "Remove", ips: "IPs and subnets", countries: "Countries", add: "Add", ip_ph: "64.137.54.87 or 64.137.54.0/24",
     country_ph: "Start typing a country", no_ips: "No allowed IPs", no_countries: "No allowed countries",
     current_net: "Current network", router: "Router", net_name: "Name, e.g. \"Home\"", no_trusted: "No trusted networks yet",
@@ -240,9 +240,14 @@ function appRow(a) {
 }
 
 function apps() {
-  const pre = S.apps.filter((a) => !a.custom), cus = S.apps.filter((a) => a.custom);
-  pre.sort((a, b) => (b.enabled - a.enabled) || a.name.localeCompare(b.name));
+  const byState = (a, b) => (b.enabled - a.enabled) || a.name.localeCompare(b.name);
+  const pre = S.apps.filter((a) => !a.custom && !a.browser).sort(byState);
+  const web = S.apps.filter((a) => a.browser).sort(byState);
+  const cus = S.apps.filter((a) => a.custom);
   return `<div class="card list">${pre.map(appRow).join("")}</div>
+  <h2>${t("browsers")}</h2>
+  <p class="hint">${t("browsers_hint")}${S.goos === "darwin" ? t("browsers_safari") : ""}</p>
+  <div class="card list">${web.map(appRow).join("")}</div>
   <h2>${t("custom")}</h2>
   <div class="card list">${cus.map(appRow).join("")}
     <div class="item"><div class="add" style="flex:1;margin:0">

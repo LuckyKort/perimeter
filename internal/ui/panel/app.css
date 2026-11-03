@@ -142,6 +142,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .item .meta { color: var(--muted); font-size: 13px; }
 .item .end { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .rule { padding: 4px 18px 16px 64px; }
+p.hint { color: var(--muted); font-size: 13px; line-height: 1.45; margin: -4px 0 10px; max-width: 640px; }
 .rule .hint { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
 
 .switch { position: relative; width: 40px; height: 24px; flex: none; }

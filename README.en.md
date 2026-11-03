@@ -45,7 +45,7 @@
 - **Closes them if the IP doesn't come back**: politely first so they can save, then by force. While the IP isn't allowed they can't be started again.
 - **Allow IPs, subnets or whole countries** - VPNs rotate addresses within a country all the time.
 - **Your IP and country always in sight**: flag and IP in the macOS menu bar, a country-code badge in the Windows tray, coloured by state.
-- **Presets**: Claude, ChatGPT, Codex, Cursor, Windsurf, GitHub Copilot, Gemini CLI, Perplexity, Telegram, Discord, Slack, Zoom, plus any app of your own.
+- **Presets**: Claude, ChatGPT, Codex, Cursor, Windsurf, GitHub Copilot, Gemini CLI, Perplexity, Telegram, Discord, Slack, Zoom; browsers for AI on the web: Google Chrome, Yandex Browser, Microsoft Edge, Brave, Firefox (a browser freezes whole, with every tab, so keep a separate one for AI); plus any app of your own.
 - **IPv6 leaks**: many VPNs tunnel only IPv4; Kordon checks both addresses.
 - **Whole process trees**: everything the app started (MCP servers, `curl`, `git` under Claude Code) is frozen too.
 - **Two independent services must agree** on the IP; any disagreement counts as a possible leak.
