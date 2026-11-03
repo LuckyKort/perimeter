@@ -1,0 +1,44 @@
+/* Shared by the popup and the "paused" page. Efimov Dev colours: blue only for the main action. */
+:root {
+  --bg: #F7F8FB; --card: #fff; --text: #0F1115; --muted: #6B7080; --line: #E6E8EE; --soft: #F1F3F7;
+  --blue: #2F5BFF; --ok: #22C55E; --warn: #F5A524; --bad: #E5484D;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0F1115; --card: #171A21; --text: #fff; --muted: #8B93A1; --line: #262A33; --soft: #20242C; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.45 -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--text); background: var(--bg); }
+button { font: inherit; cursor: pointer; border: 0; border-radius: 999px; padding: 9px 14px; background: var(--soft); color: var(--text); font-weight: 600; transition: transform .25s cubic-bezier(.2,.8,.2,1), filter .2s; }
+button:hover { transform: translateY(-2px); filter: brightness(1.05); }
+button.pri { background: var(--blue); color: #fff; }
+.top { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.top img { width: 22px; height: 22px; border-radius: 6px; }
+.state { display: flex; align-items: center; gap: 8px; font-weight: 700; margin-top: 14px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.ok .dot { background: var(--ok); } .warn .dot { background: var(--warn); } .bad .dot { background: var(--bad); }
+.muted { color: var(--muted); }
+
+/* the paused page */
+body.blocked { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.blocked .card { width: min(460px, 100%); background: var(--card); border-radius: 24px; padding: 26px; box-shadow: 0 0 0 1px var(--line) inset, 0 30px 80px rgba(15,17,21,.12); }
+.blocked p { color: var(--muted); margin: 10px 0 0; }
+.blocked .url { font-size: 12.5px; word-break: break-all; opacity: .8; }
+.blocked .why { font-size: 13px; }
+
+/* popup */
+body.popup { width: 340px; padding: 14px; }
+.popup .sec { background: var(--card); border-radius: 16px; padding: 12px 14px; margin-top: 10px; box-shadow: 0 0 0 1px var(--line) inset; }
+.popup .sec h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.popup .ip { font-weight: 700; font-size: 18px; margin-top: 4px; }
+.popup .sites { max-height: 190px; overflow: auto; margin: 0 -4px; }
+.popup label.site { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; font-size: 13px; }
+.popup label.site:hover { background: var(--soft); }
+.popup label.site input { accent-color: var(--blue); }
+.popup .add { display: flex; gap: 6px; margin-top: 8px; }
+.popup .add input { flex: 1; min-width: 0; border: 0; border-radius: 999px; padding: 8px 12px; background: var(--soft); color: var(--text); font: inherit; }
+.popup .rtc { font-size: 13px; margin-top: 8px; }
+.popup .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.popup .foot { display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; }
+.popup .foot a { color: var(--muted); text-decoration: none; }
+.popup .note { font-size: 12px; color: var(--muted); margin-top: 6px; }

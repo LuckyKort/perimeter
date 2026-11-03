@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="ui.css">
+</head>
+<body class="popup">
+<div class="top"><img src="icons/icon32.png" alt=""><b>Kordon</b></div>
+<div class="sec">
+  <div class="state" id="state" style="margin-top:0"><span class="dot"></span><span id="stateText"></span></div>
+  <div class="ip" id="ip"></div>
+  <div class="note" id="stateNote"></div>
+</div>
+<div class="sec">
+  <h3 id="hSites"></h3>
+  <div class="sites" id="sites"></div>
+  <div class="add"><input id="newSite" placeholder="example.ai"><button id="addSite">+</button></div>
+  <div class="note" id="extraNote"></div>
+</div>
+<div class="sec">
+  <h3>WebRTC</h3>
+  <div class="note" id="rtcAbout"></div>
+  <div class="row"><button id="rtcCheck"></button><button id="rtcFix"></button></div>
+  <div class="rtc" id="rtcResult"></div>
+</div>
+<div class="foot"><a id="studio" href="#">efimovdev.ru</a><span class="muted" id="ver"></span></div>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

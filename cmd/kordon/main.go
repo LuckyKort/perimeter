@@ -103,6 +103,7 @@ func run(tray bool) {
 	if err := srv.Start(ctx); err != nil {
 		app.Logf("panel server: %v", err)
 	}
+	srv.StartExt(ctx)
 
 	done := make(chan struct{})
 	go func() { r.Run(); close(done) }()

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -105,5 +106,28 @@ func TestServerAuth(t *testing.T) {
 	}
 	if code := post(strings.TrimSuffix(info.URL, "/"), `{"op":"add_ip","value":"not an ip"}`); code != http.StatusBadRequest {
 		t.Fatalf("bad ip accepted: %d", code)
+	}
+}
+
+func TestExtGuard(t *testing.T) {
+	h := extGuard(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) }))
+	try := func(host, origin string) (int, string) {
+		r := httptest.NewRequest("GET", "/ext/v1/state", nil)
+		r.Host = host
+		if origin != "" {
+			r.Header.Set("Origin", origin)
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code, w.Header().Get("Access-Control-Allow-Origin")
+	}
+	if c, cors := try("127.0.0.1:"+ExtPort, "chrome-extension://abc"); c != 200 || cors != "chrome-extension://abc" {
+		t.Fatalf("extension: %d %q", c, cors)
+	}
+	if c, _ := try("127.0.0.1:"+ExtPort, "https://evil.example"); c != 403 {
+		t.Fatalf("website origin: %d", c)
+	}
+	if c, _ := try("evil.example:"+ExtPort, ""); c != 403 {
+		t.Fatalf("rebinding host: %d", c)
 	}
 }

@@ -83,7 +83,7 @@ func PingLoop(ctx context.Context, version string, enabled func() bool) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Hour):
+		case <-time.After(5 * time.Minute): // cheap: nothing is sent until the day changes
 		}
 	}
 }

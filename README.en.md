@@ -63,7 +63,11 @@
 - **Proxy-mode VPN clients** (v2rayN, Hiddify, Clash) are handled: the IP is checked through the system proxy, the way your apps see it.
 - **One-click updates**: a new release shows up in the tray window with what's new and an "Update" button; Kordon downloads it (with progress), checks its SHA-256 and restarts, then shows once what changed. Nothing is installed without your click.
 - Pause, event history, a screen-sharing mode that hides the IP, hot-reloaded `config.yaml`.
-- No admin rights, no telemetry, open source.
+- **First start in two clicks**: the window asks whether the address is the VPN's and offers to protect AI apps that are already running.
+- **Browser extension**: pauses only Claude, ChatGPT, Gemini and other AI tabs, the rest of the browser keeps working; checks WebRTC leaks too. Needs Kordon 1.3+; install `kordon-extension.zip` from the latest release (unpacked, developer mode) until it's in the Chrome Web Store.
+- **Telegram alerts** through the Kordon bot: the VPN dropped, apps paused, apps resumed. No addresses in the messages.
+- **Leak check** in the panel: every IP service on its own, IPv6, DNS country, and the address of programs that ignore the system proxy.
+- No admin rights, nothing sent without your consent (the user count is opt-in), open source.
 
 ## Install
 
@@ -109,7 +113,7 @@ CLI: `kordon panel`, `kordon status`, `kordon allow [IP|subnet|CC]`, `kordon con
 
 ## What goes over the network
 
-Only two kinds of requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, `checkip.amazonaws.com`, `ipinfo.io/ip`; IPv6: `api6.ipify.org`, `ipv6.icanhazip.com`, `v6.ident.me`; all configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). Plus, every 6 hours, one request to `api.github.com` for the latest version number (`update_check: false` turns it off). No analytics.
+Requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, `checkip.amazonaws.com`, `ipinfo.io/ip`; IPv6: `api6.ipify.org`, `ipv6.icanhazip.com`, `v6.ident.me`; all configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). Opt-in only: a daily `{"v", "os"}` ping for the user count and Telegram alert texts (without addresses) to `efimovdev.ru/kordon/api`; the server code is in [`server/`](server/kordon_cloud.py). Plus, every 6 hours, one request to `api.github.com` for the latest version number (`update_check: false` turns it off). No analytics.
 
 ## How safe is it
 
