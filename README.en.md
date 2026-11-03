@@ -69,6 +69,8 @@ Windows (PowerShell):
 irm https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.ps1 | iex
 ```
 
+Homebrew: `brew install --cask ef1m03/tap/kordon` · winget (under Microsoft's review): `winget install EfimovDev.Kordon`.
+
 Or grab the files from the [latest release](https://github.com/ef1m03/kordon/releases/latest). The builds aren't notarized/signed (that's paid), so the first manual launch needs *right click → Open* on macOS (*System Settings → Privacy & Security → Open Anyway* on macOS 15+) or *More info → Run anyway* on Windows. The install scripts avoid that.
 
 On first start Kordon **allows the current IP**, so install it with your VPN on. Claude is protected by default; pick other apps in the *Protected apps* menu.

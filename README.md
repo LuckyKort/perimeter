@@ -102,6 +102,12 @@ curl -fsSL https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.
 
 Скрипт скачает свежую версию в «Программы», запустит её и включит автозапуск. Справа вверху, рядом с часами, появится зелёная точка с флагом и IP.
 
+Или через [Homebrew](https://brew.sh):
+
+```bash
+brew install --cask ef1m03/tap/kordon
+```
+
 <details>
 <summary>Установить вручную, без Терминала</summary>
 
@@ -124,6 +130,12 @@ irm https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.ps1 | i
 ```
 
 Kordon установится в вашу папку пользователя (права администратора не нужны), появится в меню Пуск и запустится. Значок с кодом страны появится у часов.
+
+Или через winget (каталог Microsoft; пакет проходит их проверку):
+
+```powershell
+winget install EfimovDev.Kordon
+```
 
 <p align="center"><img src="docs/img/tray-badges.png" width="340" alt="Значки Kordon на Windows: NL зелёный, RU оранжевый и красный, серый"></p>
 
