@@ -106,6 +106,21 @@ func run(tray bool) {
 
 	done := make(chan struct{})
 	go func() { r.Run(); close(done) }()
+	go app.PingLoop(ctx, version, func() bool { return r.G.Snapshot(time.Now()).Config.UsagePing == "on" })
+	go func() {
+		// Notice a /stop in the bot, so the panel doesn't show a dead link.
+		for ctx.Err() == nil {
+			if app.TG.IsLinked() {
+				c, cancel := context.WithTimeout(ctx, 15*time.Second)
+				app.TG.Refresh(c)
+				cancel()
+			}
+			select {
+			case <-ctx.Done():
+			case <-time.After(30 * time.Minute):
+			}
+		}
+	}()
 	stop := func() {
 		cancel()
 		<-done // Run un-freezes everything before returning
@@ -127,6 +142,7 @@ func run(tray bool) {
 	t := &ui.Tray{G: r.G, Version: version, OnQuit: stop, UpdateCheck: cfg.UpdateCheck, Stats: stats}
 	srv.UpdateAvailable, srv.UpdateInfo, srv.InstallUpdate = t.UpdateAvailable, t.UpdateInfo, t.InstallUpdate
 	srv.OpenPanel = ui.OpenPanel
+	t.Onboarding = srv.OnboardingPending
 	go func() {
 		<-sig
 		stop()

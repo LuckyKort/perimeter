@@ -29,7 +29,8 @@
 * { box-sizing: border-box; margin: 0; }
 html, body { background: transparent; }
 html.win body { background: var(--solid); }
-body { font: 14px/1.45 Golos, -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--text); -webkit-user-select: none; user-select: none; cursor: default; overflow: hidden; }
+body { font: 14px/1.45 Golos, -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--text); -webkit-user-select: none; user-select: none; cursor: default; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+body::-webkit-scrollbar { display: none; }
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
 
 .pop { padding: 14px; background: var(--tint); min-height: 100vh; }
@@ -139,3 +140,18 @@ html.win .pop { background: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::after { animation: none !important; transition: none !important; }
 }
+
+/* first start */
+.ob .ob-ip { font-size: 13px; margin-top: 8px; }
+.ob .ob-ip b { font-family: Unbounded, Golos, sans-serif; font-weight: 600; letter-spacing: -.02em; }
+.ob .ob-q { font-weight: 600; margin: 12px 0 8px; }
+.ob .b { margin-top: 10px; }
+.ob .note { margin-top: 10px; font-size: 12.5px; line-height: 1.45; }
+.ob .ob-l { font-size: 12px; color: var(--muted); margin: 14px 0 8px; }
+.sug { display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; background: var(--surface); font-size: 13px; transition: background .2s, transform .25s var(--ease); }
+.sug:hover { background: var(--surface-h); transform: translateY(-2px); }
+.sug .av { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; font: 700 12px Golos, sans-serif; }
+.sug > span:last-child { color: var(--blue-l); font-weight: 700; }
+.chk { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 12.5px; line-height: 1.4; cursor: pointer; }
+.chk input { margin-top: 2px; accent-color: var(--blue); width: 16px; height: 16px; flex: none; }
+.chk small { color: var(--muted); }

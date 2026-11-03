@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
 
+	"github.com/ef1m03/kordon/internal/app"
 	"github.com/ef1m03/kordon/internal/guard"
 )
 
@@ -112,6 +113,9 @@ var msgs = map[string]map[string]string{
 		"cfg.error.b":       "%v. Работаю со старыми настройками.",
 		"panel":             "Открыть панель Kordon…",
 		"open.pop":          "Открыть Kordon",
+		"panel.err.tg":      "Сервис Kordon сейчас недоступен, попробуйте позже",
+		"tg.test":           "✅ Проверка: уведомления Kordon приходят сюда.",
+		"tg.hello":          "✅ Kordon подключён к этому чату.",
 		"panel.close":       "Закрыть окно",
 		"panel.quit":        "Закрыть панель",
 		"trust":             "Доверять этой сети (без проверки IP)",
@@ -236,6 +240,9 @@ var msgs = map[string]map[string]string{
 		"cfg.error.b":       "%v. Keeping the previous settings.",
 		"panel":             "Open Kordon panel…",
 		"open.pop":          "Open Kordon",
+		"panel.err.tg":      "The Kordon service is unavailable right now, try later",
+		"tg.test":           "✅ Test: Kordon alerts arrive here.",
+		"tg.hello":          "✅ Kordon is connected to this chat.",
 		"panel.close":       "Close Window",
 		"panel.quit":        "Quit Panel",
 		"trust":             "Trust this network (no IP check)",
@@ -490,4 +497,23 @@ func Notification(e guard.Event) (title, body string, ok bool) {
 // seen lists every address the IP services reported.
 func seen(e guard.Event) string {
 	return strings.Join(append([]string{e.IP}, e.Others...), ", ")
+}
+
+// TelegramText is the alert for the Kordon bot: the notification text without
+// addresses (they don't go to the Efimov Dev service), with a status mark.
+func TelegramText(e guard.Event) (string, bool) {
+	title, body, ok := Notification(e)
+	if !ok {
+		return "", false
+	}
+	mark := map[guard.EventKind]string{
+		guard.EvFrozen: "🟠", guard.EvBlocked: "🔴", guard.EvKilledNew: "🔴",
+		guard.EvResumed: "🟢", guard.EvUnblocked: "🟢", guard.EvDNSLeak: "⚠️",
+	}[e.Kind]
+	if mark == "" {
+		return "", false // first-run and "allowed by you" events aren't alerts
+	}
+	body = app.Mask(body)
+	body = strings.NewReplacer("x.x.x.x, ", "", "x:x::x, ", "", "x.x.x.x", "-", "x:x::x", "-").Replace(body)
+	return mark + " " + title + "\n" + body, true
 }

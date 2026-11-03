@@ -74,9 +74,12 @@ static const CGFloat popWidth = 340;
 	}
 	NSRect vis = screen.visibleFrame;
 	CGFloat x = m.x - popWidth / 2;
+	// Opened by Kordon itself (first start), not by a click: the right corner.
+	if (m.y < NSMaxY(screen.frame) - 40) x = NSMaxX(vis) - popWidth - 12;
 	x = MAX(NSMinX(vis) + 8, MIN(x, NSMaxX(vis) - popWidth - 8));
 	CGFloat top = NSMaxY(vis) - 6;
-	[self.panel setFrame:NSMakeRect(x, top - self.height, popWidth, self.height) display:YES];
+	CGFloat h = MIN(self.height, NSHeight(vis) - 16); // a long card scrolls on a small screen
+	[self.panel setFrame:NSMakeRect(x, top - h, popWidth, h) display:YES];
 }
 
 - (void)show {
@@ -113,8 +116,10 @@ static const CGFloat popWidth = 340;
 		[self hide];
 	} else if ([op isEqualToString:@"resize"]) {
 		CGFloat h = [msg.body[@"height"] doubleValue];
-		if (h < 120 || h > 900 || fabs(h - self.height) < 1) return;
+		if (h < 120 || h > 1100 || fabs(h - self.height) < 1) return;
 		self.height = h;
+		NSScreen *screen = self.panel.screen ?: NSScreen.mainScreen;
+		h = MIN(h, NSHeight(screen.visibleFrame) - 16);
 		NSRect f = self.panel.frame;
 		CGFloat top = NSMaxY(f);
 		[self.panel setFrame:NSMakeRect(f.origin.x, top - h, popWidth, h) display:YES animate:self.panel.visible];

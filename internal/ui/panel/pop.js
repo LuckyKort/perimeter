@@ -5,6 +5,11 @@
 
 const L = {
   ru: {
+    ob_t: "Привет! Настроим за минуту", ob_ip: "Я разрешил текущий адрес:", ob_q: "Это адрес VPN?", ob_yes: "Да, это VPN", ob_no: "Нет",
+    ob_off: "Тогда включи VPN: как только появится его адрес, нажми «Разрешить этот IP» ниже. До этого программы на паузе.",
+    ob_country: "Разрешить всю страну", ob_apps: "Ещё запущено - защищать?", ob_ping: "Учитывать меня в счётчике пользователей Kordon",
+    ob_ping_d: "Раз в день: только версия и система. Без IP, без номера установки.", ob_done: "Готово",
+    ping_t: "Помочь посчитать пользователей?", ping_d: "Раз в день Kordon отправит только версию и систему. Без IP и без номера установки.", ping_yes: "Да, учитывать", ping_no: "Нет",
     h_ok: "Защита включена", h_frozen: "Приложения на паузе", h_blocked: "Приложения закрыты", h_starting: "Проверяю IP…",
     h_paused: "Защита на паузе", paused_until: "до", paused_forever: "до перезапуска",
     allowed: "разрешено", not_allowed: "не разрешено", offline: "Нет интернета", checking: "Проверяю…",
@@ -21,6 +26,11 @@ const L = {
     open: "Открыть панель →", checked: "Проверяю", trusted_t: "Сеть добавлена в доверенные",
   },
   en: {
+    ob_t: "Hi! A one-minute setup", ob_ip: "I've allowed the current address:", ob_q: "Is this your VPN's address?", ob_yes: "Yes, the VPN", ob_no: "No",
+    ob_off: "Then turn the VPN on: once its address shows up, press \"Allow this IP\" below. Until then the apps stay paused.",
+    ob_country: "Allow the whole country", ob_apps: "Also running - protect them?", ob_ping: "Count me among Kordon's users",
+    ob_ping_d: "Once a day: just the version and the OS. No IP, no install id.", ob_done: "Done",
+    ping_t: "Help count Kordon's users?", ping_d: "Once a day Kordon sends only its version and the OS. No IP, no install id.", ping_yes: "Yes, count me", ping_no: "No",
     h_ok: "Protection is on", h_frozen: "Apps are paused", h_blocked: "Apps are closed", h_starting: "Checking IP…",
     h_paused: "Protection paused", paused_until: "until", paused_forever: "until restart",
     allowed: "allowed", not_allowed: "not allowed", offline: "No internet", checking: "Checking…",
@@ -79,6 +89,37 @@ function avatar(name) {
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
   return `background:hsl(${h} 60% 50% / .2);color:hsl(${h} 70% 62%)`;
+}
+
+let obAnswer = "", obPing = false;
+
+// First start: confirm the auto-allowed IP is the VPN's, offer the running apps, ask about the count.
+function onboardCard() {
+  const o = S.onboarding;
+  if (!o || !o.pending) return "";
+  const ip = S.ip ? `<b>${esc(S.ip)}</b>${S.country ? ` · ${country(S.country)}` : ""}` : esc(t("checking"));
+  let q = "";
+  if (obAnswer === "") {
+    q = `<div class="ob-q">${t("ob_q")}</div><div class="b"><button class="btn pri" data-do="ob_yes">${t("ob_yes")}</button><button class="btn" data-do="ob_no">${t("ob_no")}</button></div>`;
+  } else if (obAnswer === "yes" && S.country && !(S.allow?.countries || []).some((c) => c.code === S.country.code)) {
+    q = `<div class="b"><button class="btn" data-op="allow_current_country">${t("ob_country")} <small>${country(S.country)}</small></button></div>`;
+  } else if (obAnswer === "no") {
+    q = `<div class="note">${t("ob_off")}</div>`;
+  }
+  const sug = (o.suggest || []).map((a) => `<button class="sug" data-op="toggle_app" data-app="${esc(a.id)}"><span class="av" style="${avatar(a.name)}">${esc(a.name[0])}</span>${esc(a.name)} <span>+</span></button>`).join("");
+  return `<div class="upd ob"><div class="h"><span class="v">${t("ob_t")}</span></div>
+    <div class="ob-ip">${t("ob_ip")} ${ip}</div>${q}
+    ${sug ? `<div class="ob-l">${t("ob_apps")}</div><div class="apps">${sug}</div>` : ""}
+    <label class="chk"><input type="checkbox" id="obPing" ${obPing ? "checked" : ""}><span><b>${t("ob_ping")}</b><br><small>${t("ob_ping_d")}</small></span></label>
+    <div class="b"><button class="btn ${obAnswer ? "pri" : ""}" data-do="ob_done">${t("ob_done")}</button></div></div>`;
+}
+
+// For people who updated from a version without the count: asked once, nothing is sent until they say yes.
+function pingCard() {
+  if (S.usagePing !== "ask" || S.onboarding?.pending) return "";
+  return `<div class="upd ping"><div class="h"><span class="v">${t("ping_t")}</span></div>
+    <div class="note" style="margin:6px 0 10px">${t("ping_d")}</div>
+    <div class="b"><button class="btn pri" data-op="usage_ping" data-value="on">${t("ping_yes")}</button><button class="btn" data-op="usage_ping" data-value="off">${t("ping_no")}</button></div></div>`;
 }
 
 function updateCard() {
@@ -173,7 +214,7 @@ function actions() {
 function render() {
   const html = `<div class="top"><img src="icon.png" alt=""><b>Kordon</b><span class="sp"></span>
       <button class="ib" data-panel="overview" title="${t("panel")}">${svg("panel")}</button></div>
-    ${updateCard()}${hero()}${apps()}${actions()}
+    ${onboardCard() || updateCard() || pingCard()}${hero()}${apps()}${actions()}
     <div class="foot"><button class="open" data-panel="overview">${t("open")}</button><button class="studio" data-url="${esc(S.studioUrl)}">efimovdev.ru</button></div>`;
   if (html === lastHTML) return;
   lastHTML = html;
@@ -228,16 +269,27 @@ document.addEventListener("click", async (e) => {
   if (b.dataset.op) {
     const op = b.dataset.op;
     if (op === "pause") pauseOpen = false;
-    await api(op, b.dataset.min !== undefined ? { minutes: +b.dataset.min } : {});
+    const data = {};
+    if (b.dataset.min !== undefined) data.minutes = +b.dataset.min;
+    if (b.dataset.value !== undefined) data.value = b.dataset.value;
+    if (b.dataset.app !== undefined) data.app = b.dataset.app;
+    await api(op, data);
     return;
   }
   switch (b.dataset.do) {
     case "pause": pauseOpen = !pauseOpen; lastHTML = ""; render(); break;
     case "notes": notesOpen = !notesOpen; lastHTML = ""; render(); break;
     case "hideupd": hiddenUpdate = S.updateInfo.version; lastHTML = ""; render(); break;
+    case "ob_yes": obAnswer = "yes"; lastHTML = ""; render(); break;
+    case "ob_no": obAnswer = "no"; await api("onboard_not_vpn"); break;
+    case "ob_done": await api("onboard_done", { value: document.getElementById("obPing")?.checked ? "on" : "off" }); break;
     case "check": toast(t("checked") + "…"); await api("check_now"); break;
     case "trust": if (await api("trust_network")) toast(t("trusted_t")); break;
   }
+});
+
+document.addEventListener("change", (e) => {
+  if (e.target.id === "obPing") obPing = e.target.checked; // survives the once-a-second re-render
 });
 
 document.addEventListener("keydown", (e) => {

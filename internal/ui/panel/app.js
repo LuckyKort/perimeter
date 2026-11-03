@@ -6,7 +6,22 @@
 const L = {
   ru: {
     overview: "Обзор", apps: "Приложения", allow: "Разрешено", networks: "Сети", stats: "Статистика",
-    history: "История", settings: "Настройки", about: "О программе",
+    history: "История", settings: "Настройки", about: "О программе", leaks: "Проверка",
+    lead_leaks: "Глубокая проверка: каждый сервис по отдельности, IPv6, DNS и программы, которые не смотрят на системный прокси. Занимает несколько секунд.",
+    lk_run: "Проверить на утечки", lk_again: "Проверить ещё раз", lk_running: "Проверяю… несколько секунд", lk_at: "Проверено в",
+    lk_ok: "Всё чисто", lk_warn: "Есть на что посмотреть", lk_bad: "Найдена утечка",
+    lk_v4: "Внешний IP", lk_v4_ok: "Все сервисы видят один адрес, и он разрешён.", lk_v4_split: "Сервисы видят разные адреса - часть трафика идёт мимо VPN.",
+    lk_v4_notallowed: "Адрес не разрешён: защищаемые программы будут на паузе.", lk_v4_none: "Ни один сервис не ответил - нет интернета?",
+    lk_direct: "Программы без прокси", lk_direct_none: "Системный прокси не задан - все программы идут одним путём.",
+    lk_direct_ok: "Через прокси и напрямую - один адрес: VPN заворачивает весь трафик.",
+    lk_direct_bad: "Программы, которые не смотрят на системный прокси (терминал, Claude Code, git, многие CLI), выходят с другого адреса. Включите в VPN-клиенте режим TUN («весь трафик»).",
+    lk_direct_warn: "Без прокси трафик идёт с другого адреса, но он тоже разрешён.",
+    lk_v6: "IPv6", lk_v6_off: "Проверка IPv6 выключена в настройках.", lk_v6_none: "IPv6 нет - утечки через него быть не может.",
+    lk_v6_ok: "IPv6 идёт через разрешённый адрес.", lk_v6_bad: "По IPv6 программы выходят мимо VPN. Выключите IPv6 в системе или включите его поддержку в VPN.",
+    lk_dns: "DNS", lk_dns_none: "Не удалось определить DNS-сервер.", lk_dns_ok: "DNS-сервер в той же стране, что и IP.",
+    lk_dns_warn: "Запросы к сайтам идут через DNS в другой стране - скорее всего, у провайдера. Включите в VPN «DNS через туннель».",
+    lk_web: "Браузер", lk_web_d: "Утечку через WebRTC проверяет расширение Kordon для браузера.",
+    lk_services: "Ответы сервисов", lk_noans: "нет ответа",
     lead_overview: "Что сейчас с сетью и защищёнными приложениями",
     lead_apps: "Kordon замораживает выбранные программы, когда сеть или IP не те. У каждой могут быть свои правила.",
     lead_allow: "Где приложениям можно работать. Подходит хоть что-то одно - значит можно.",
@@ -39,7 +54,8 @@ const L = {
     o_interval: "Сверять IP раз в", o_interval_d: "Когда всё в порядке", o_agree: "Сервисов должны совпасть", o_agree_d: "Чтобы поверить IP",
     o_menubar: "Рядом со значком", mb_ip: "Страна и IP", mb_country: "Только страна", mb_icon: "Ничего",
     o_lang: "Язык", lang_auto: "Как в системе", o_notify: "Уведомления",
-    o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Несколько раз в день, ставятся только по клику",
+    o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Несколько раз в день, ставятся только по клику", tg_t: "Уведомления в Telegram", tg_d: "Бот Kordon напишет, когда VPN отвалится и программы встанут на паузу, и когда всё вернётся. Удобно, если Claude Code или другой агент работает без вас. Адреса в сообщения не попадают, только страна.", tg_on: "Подключено. Сообщения приходят в чат с ботом Kordon.", tg_wait: "Откройте Telegram и нажмите «Старт» в боте Kordon…", tg_link: "Подключить", tg_again: "Открыть ещё раз", tg_test: "Проверить", tg_off: "Отключить",
+    o_ping: "Учитывать меня в счётчике пользователей", o_ping_d: "Раз в день - только версия и система. Без IP и без номера установки", on: "Да", off: "Нет",
     open_config: "Открыть config.yaml", open_log: "Открыть журнал", report: "Сообщить о проблеме", sec: "с",
     update_avail: "Доступна версия", update_btn: "Обновить", saved: "Сохранено", whats_new: "Что нового в", all_changes: "Все версии", about_text: "Kill switch для приложений: замораживает выбранные программы, когда отваливается VPN или меняется IP. Открытый код, без телеметрии.",
     made: "Сделано в Efimov Dev", github: "Kordon на GitHub", license: "Лицензия GPL-3.0", telegram: "Написать в Telegram",
@@ -47,7 +63,22 @@ const L = {
   },
   en: {
     overview: "Overview", apps: "Apps", allow: "Allowed", networks: "Networks", stats: "Statistics",
-    history: "History", settings: "Settings", about: "About",
+    history: "History", settings: "Settings", about: "About", leaks: "Leak check",
+    lead_leaks: "A deep check: every service on its own, IPv6, DNS, and programs that ignore the system proxy. Takes a few seconds.",
+    lk_run: "Check for leaks", lk_again: "Check again", lk_running: "Checking… a few seconds", lk_at: "Checked at",
+    lk_ok: "All clean", lk_warn: "Worth a look", lk_bad: "A leak found",
+    lk_v4: "Public IP", lk_v4_ok: "All services see one address, and it is allowed.", lk_v4_split: "Services see different addresses - some traffic bypasses the VPN.",
+    lk_v4_notallowed: "The address isn't allowed: protected apps will be paused.", lk_v4_none: "No service answered - no internet?",
+    lk_direct: "Programs without the proxy", lk_direct_none: "No system proxy - all programs take the same way.",
+    lk_direct_ok: "With and without the proxy - the same address: the VPN carries all traffic.",
+    lk_direct_bad: "Programs that ignore the system proxy (terminal, Claude Code, git, most CLIs) go out from another address. Turn on TUN (\"all traffic\") mode in the VPN client.",
+    lk_direct_warn: "Without the proxy traffic leaves from another address, but it is allowed too.",
+    lk_v6: "IPv6", lk_v6_off: "IPv6 checking is off in the settings.", lk_v6_none: "No IPv6 - nothing can leak through it.",
+    lk_v6_ok: "IPv6 goes through an allowed address.", lk_v6_bad: "Over IPv6 programs bypass the VPN. Turn IPv6 off in the system or enable it in the VPN.",
+    lk_dns: "DNS", lk_dns_none: "Couldn't tell the DNS server.", lk_dns_ok: "The DNS server is in the same country as the IP.",
+    lk_dns_warn: "Site lookups go through DNS in another country - probably your ISP's. Turn on \"DNS through the tunnel\" in the VPN.",
+    lk_web: "Browser", lk_web_d: "The Kordon browser extension checks for WebRTC leaks.",
+    lk_services: "Service answers", lk_noans: "no answer",
     lead_overview: "Your network and protected apps right now",
     lead_apps: "Kordon freezes the chosen apps when the network or IP isn't right. Each one can have its own rules.",
     lead_allow: "Where apps may run. Matching any one entry is enough.",
@@ -80,7 +111,8 @@ const L = {
     o_interval: "Check the IP every", o_interval_d: "While all is well", o_agree: "Services must agree", o_agree_d: "To trust an IP",
     o_menubar: "Next to the icon", mb_ip: "Country and IP", mb_country: "Country only", mb_icon: "Nothing",
     o_lang: "Language", lang_auto: "System", o_notify: "Notifications",
-    o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "A few times a day, installed only when you click",
+    o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "A few times a day, installed only when you click", tg_t: "Telegram alerts", tg_d: "The Kordon bot writes when the VPN drops and apps are paused, and when it's back. Handy when Claude Code or another agent works without you. No addresses in the messages, only the country.", tg_on: "Connected. Messages go to your chat with the Kordon bot.", tg_wait: "Open Telegram and press Start in the Kordon bot…", tg_link: "Connect", tg_again: "Open again", tg_test: "Test", tg_off: "Disconnect",
+    o_ping: "Count me among Kordon's users", o_ping_d: "Once a day - just the version and the OS. No IP, no install id", on: "Yes", off: "No",
     open_config: "Open config.yaml", open_log: "Open log", report: "Report a problem", sec: "s",
     update_avail: "Version available:", update_btn: "Update", saved: "Saved", whats_new: "What's new in", all_changes: "All versions", about_text: "A kill switch for apps: freezes the apps you choose when the VPN drops or your IP changes. Open source, no telemetry.",
     made: "Made by Efimov Dev", github: "Kordon on GitHub", license: "GPL-3.0 license", telegram: "Message on Telegram",
@@ -97,6 +129,7 @@ const ICONS = {
   history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
   about: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  leaks: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/><path d="M8.5 11l1.8 1.8 3.2-3.6"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   snow: '<path d="M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7"/>',
   stop: '<path d="M6 6l12 12M18 6L6 18"/>',
@@ -105,7 +138,7 @@ const ICONS = {
 const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const PAGES = ["overview", "apps", "allow", "networks", "stats", "history", "settings", "about"];
+const PAGES = ["overview", "apps", "allow", "networks", "leaks", "stats", "history", "settings", "about"];
 let S = null; // last state
 let page = (location.hash || "#overview").slice(1);
 let countries = [];
@@ -350,6 +383,13 @@ function settings() {
   <h2>${t("g_system")}</h2><div class="card">
     <div class="set"><div class="txt"><b>${t("o_autostart")}</b></div><label class="switch"><input type="checkbox" id="autostart" ${S.autostart ? "checked" : ""}><span></span></label></div>
     ${toggleSet("update_check", t("o_update"), t("o_update_d"), s.update_check)}
+    ${selSet("usage_ping", t("o_ping"), t("o_ping_d"), s.usage_ping === "on" ? "on" : "off", [["on", t("on")], ["off", t("off")]])}
+  </div>
+  <h2>Telegram</h2><div class="card">
+    <div class="set"><div class="txt"><b>${t("tg_t")}</b><span>${S.telegram?.linked ? t("tg_on") : S.telegram?.waiting ? t("tg_wait") : t("tg_d")}</span></div>
+      <div class="field" style="gap:8px;display:flex">${S.telegram?.linked
+        ? `<button class="btn small" data-op="tg_test">${t("tg_test")}</button><button class="btn small danger" data-op="tg_unlink">${t("tg_off")}</button>`
+        : `<button class="btn small primary" data-op="tg_link">${S.telegram?.waiting ? t("tg_again") : t("tg_link")}</button>`}</div></div>
   </div>
   <h2>${t("g_files")}</h2><div class="card pad" style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn" data-op="open_config">${t("open_config")}</button>
@@ -368,7 +408,64 @@ function about() {
   <button class="btn small" data-url="https://github.com/ef1m03/kordon/blob/main/CHANGELOG.md">${t("all_changes")}</button></div>` : ""}`;
 }
 
-const RENDER = { overview, apps, allow, networks, stats, history, settings, about };
+// ---------- leak check ----------
+
+function ccName(code) {
+  const c = countries.find((x) => x.code === code);
+  return code ? (c ? country(c) : esc(code)) : "?";
+}
+
+// Each finding: a level (ok, warn, bad, info), a title and a line of explanation.
+function leakFindings(r) {
+  const out = [];
+  const v4 = r.v4.filter((a) => !a.error), ips = [...new Set(v4.map((a) => a.ip))];
+  const addr = (a) => `<b class="selectable">${esc(a.ip)}</b> · ${ccName(a.country)}`;
+  if (!v4.length) out.push(["warn", t("lk_v4"), t("lk_v4_none")]);
+  else if (ips.length > 1) out.push(["bad", t("lk_v4"), `${t("lk_v4_split")} ${ips.map((ip) => addr(v4.find((a) => a.ip === ip))).join(", ")}`]);
+  else if (!v4[0].allowed) out.push(["warn", t("lk_v4"), `${addr(v4[0])}. ${t("lk_v4_notallowed")}`]);
+  else out.push(["ok", t("lk_v4"), `${addr(v4[0])}. ${t("lk_v4_ok")}`]);
+
+  if (!r.proxy) out.push(["info", t("lk_direct"), t("lk_direct_none")]);
+  else {
+    const d = r.direct.find((a) => !a.error);
+    if (!d || ips.includes(d.ip)) out.push(["ok", t("lk_direct"), `${t("lk_direct_ok")} <span class="muted">(${esc(r.proxy)})</span>`]);
+    else if (!d.allowed) out.push(["bad", t("lk_direct"), `${addr(d)}. ${t("lk_direct_bad")}`]);
+    else out.push(["warn", t("lk_direct"), `${addr(d)}. ${t("lk_direct_warn")}`]);
+  }
+
+  if (r.v6off) out.push(["info", t("lk_v6"), t("lk_v6_off")]);
+  else {
+    const v6 = r.v6.filter((a) => !a.error);
+    if (!v6.length) out.push(["ok", t("lk_v6"), t("lk_v6_none")]);
+    else if (v6.some((a) => !a.allowed)) out.push(["bad", t("lk_v6"), `${addr(v6.find((a) => !a.allowed))}. ${t("lk_v6_bad")}`]);
+    else out.push(["ok", t("lk_v6"), `${addr(v6[0])}. ${t("lk_v6_ok")}`]);
+  }
+
+  if (!r.dns) out.push(["info", t("lk_dns"), t("lk_dns_none")]);
+  else if (v4.length && r.dns.country && v4[0].country && r.dns.country !== v4[0].country) out.push(["warn", t("lk_dns"), `${addr(r.dns)}. ${t("lk_dns_warn")}`]);
+  else out.push(["ok", t("lk_dns"), `${addr(r.dns)}. ${t("lk_dns_ok")}`]);
+
+  out.push(["info", t("lk_web"), t("lk_web_d")]);
+  return out;
+}
+
+function leaks() {
+  const L = S.leaks || {};
+  const btn = `<button class="btn primary" data-op="check_leaks" ${L.running ? "disabled" : ""}>${L.running ? t("lk_running") : L.report ? t("lk_again") : t("lk_run")}</button>`;
+  if (!L.report) return `<div class="card pad leak-start">${btn}</div>`;
+  const f = leakFindings(L.report);
+  const worst = f.some((x) => x[0] === "bad") ? "bad" : f.some((x) => x[0] === "warn") ? "warn" : "ok";
+  const at = new Date(L.report.at).toLocaleTimeString(S.lang === "en" ? "en-GB" : "ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const icon = { ok: "check", warn: "snow", bad: "stop", info: "about" };
+  const rows = (list) => list.map((a) => `<tr><td class="muted">${esc(a.service.replace(/^https?:\/\//, ""))}</td><td class="selectable">${a.error ? `<span class="muted">${t("lk_noans")}</span>` : esc(a.ip)}</td><td>${a.error ? "" : ccName(a.country)}</td></tr>`).join("");
+  return `<div class="card leak-sum ${worst}"><div class="orb">${svg(icon[worst])}</div>
+      <div><div class="title">${t("lk_" + worst)}</div><div class="sub">${t("lk_at")} ${esc(at)}</div></div><span class="grow"></span>${btn}</div>
+    <div class="card list">${f.map(([lv, title, text]) => `<div class="item leak ${lv}"><span class="lv">${svg(icon[lv])}</span><div><div class="name">${title}</div><div class="meta">${text}</div></div></div>`).join("")}</div>
+    <h2>${t("lk_services")}</h2>
+    <div class="card pad"><table class="lk-table">${rows(L.report.v4)}${rows(L.report.direct || [])}${rows(L.report.v6 || [])}</table></div>`;
+}
+
+const RENDER = { overview, apps, allow, networks, leaks, stats, history, settings, about };
 
 function nav() {
   const bad = S.status === "frozen" || S.status === "blocked";

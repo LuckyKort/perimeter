@@ -105,7 +105,8 @@ type winPop struct {
 	height   int // CSS pixels
 	hiddenAt time.Time
 	shownAt  time.Time
-	fromTop  bool // the taskbar is at the top: the window hangs down from it
+	fromTop  bool  // the taskbar is at the top: the window hangs down from it
+	workH    int32 // the most the window may be tall on its monitor
 
 	mu    sync.Mutex
 	queue []func()
@@ -255,10 +256,16 @@ func (p *winPop) place() (x, y, w, h int32) {
 	w, h = int32(popW*s), int32(float64(p.height)*s)
 	g := int32(gap * s)
 	work := mi.Work
+	p.workH = work.Bottom - work.Top - 2*g
+	h = min(h, p.workH) // a long card scrolls on a small screen
 	clamp := func(v, lo, hi int32) int32 { return max(lo, min(v, hi)) }
 	x = clamp(c.X-w/2, work.Left+g, work.Right-w-g)
 	p.fromTop = false
+	edge := int32(80 * s)
 	switch {
+	case c.X > work.Left+edge && c.X < work.Right-edge && c.Y > work.Top+edge && c.Y < work.Bottom-edge:
+		// Opened by Kordon itself (first start), not by a click on the tray: the corner by the clock.
+		x, y = work.Right-w-g, work.Bottom-h-g
 	case c.Y < work.Top: // taskbar at the top
 		y, p.fromTop = work.Top+g, true
 	case c.X < work.Left: // on the left
@@ -295,7 +302,7 @@ func (p *winPop) hide() {
 
 // resize keeps the edge next to the taskbar in place.
 func (p *winPop) resize(cssH int) {
-	if cssH < 120 || cssH > 900 || cssH == p.height {
+	if cssH < 120 || cssH > 1100 || cssH == p.height {
 		return
 	}
 	p.height = cssH
@@ -306,6 +313,9 @@ func (p *winPop) resize(cssH int) {
 	getWindowRect(p.hwnd, &r)
 	s := p.scale()
 	h := int32(float64(cssH) * s)
+	if p.workH > 0 {
+		h = min(h, p.workH)
+	}
 	y := r.Top
 	if !p.fromTop {
 		y = r.Bottom - h

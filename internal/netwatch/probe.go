@@ -178,3 +178,43 @@ func isLetters(s string) bool {
 func HTTPClient(timeout time.Duration) *http.Client {
 	return client(SystemProxy(), timeout, "tcp")
 }
+
+// Answer is one IP service's reply in a leak check.
+type Answer struct {
+	Service string `json:"service"`
+	IP      string `json:"ip"`
+	Error   bool   `json:"error"`
+}
+
+// EachService asks every service and returns all the answers, unlike PublicIP
+// that stops at the first agreement. direct skips the system proxy: that's the
+// address programs see that ignore the proxy (most terminal tools do).
+func EachService(ctx context.Context, services []string, timeout time.Duration, v6, direct bool) []Answer {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	network := "tcp4"
+	if v6 {
+		network = "tcp6"
+	}
+	proxy := SystemProxy()
+	if direct {
+		proxy = nil
+	}
+	c := client(proxy, timeout, network)
+	out := make([]Answer, len(services))
+	var wg sync.WaitGroup
+	for i, s := range services {
+		wg.Add(1)
+		go func(i int, u string) {
+			defer wg.Done()
+			out[i] = Answer{Service: u, Error: true}
+			t, err := getText(ctx, c, u)
+			a, perr := netip.ParseAddr(t)
+			if err == nil && perr == nil && a.Is4() != v6 && !a.Is4In6() {
+				out[i] = Answer{Service: u, IP: a.String()}
+			}
+		}(i, s)
+	}
+	wg.Wait()
+	return out
+}

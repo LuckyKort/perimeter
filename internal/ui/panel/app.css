@@ -210,3 +210,25 @@ input:focus, select:focus { outline: 2px solid color-mix(in srgb, var(--accent) 
 .card.notes ul { margin: 0 0 14px; padding-left: 18px; line-height: 1.55; }
 .card.notes li { margin-bottom: 6px; color: var(--muted); }
 .card.notes li b { color: var(--text); }
+
+/* leak check */
+.leak-start { display: flex; justify-content: center; padding: 36px; }
+.leak-sum { display: flex; align-items: center; gap: 16px; padding: 18px 22px; margin-bottom: 14px; }
+.leak-sum .orb { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none; }
+.leak-sum .orb svg { width: 22px; height: 22px; }
+.leak-sum.ok .orb { background: var(--ok); } .leak-sum.warn .orb { background: var(--warn); } .leak-sum.bad .orb { background: var(--bad); }
+.leak-sum .title { font-weight: 700; font-size: 17px; }
+.leak-sum .sub { color: var(--muted); font-size: 13px; }
+.leak-sum .grow { flex: 1; }
+.item.leak { align-items: flex-start; }
+.item.leak .lv { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none; margin-top: 1px; }
+.item.leak .lv svg { width: 14px; height: 14px; }
+.item.leak.ok .lv { background: var(--ok-bg); color: var(--ok); }
+.item.leak.warn .lv { background: var(--warn-bg); color: var(--warn); }
+.item.leak.bad .lv { background: var(--bad-bg); color: var(--bad); }
+.item.leak.info .lv { background: var(--gray-bg); color: var(--gray); }
+.item.leak .meta { line-height: 1.5; margin-top: 2px; }
+.muted { color: var(--muted); }
+.lk-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lk-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.lk-table tr:last-child td { border-bottom: 0; }

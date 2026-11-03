@@ -32,6 +32,7 @@ type Tray struct {
 	OnQuit      func()
 	UpdateCheck bool
 	Stats       *app.Stats
+	Onboarding  func() bool // a fresh install: the tray window opens by itself for the first setup
 
 	mu       sync.Mutex
 	lastIcon string
@@ -180,6 +181,12 @@ func (t *Tray) onReady() {
 	t.mQuit = systray.AddMenuItem(T("quit"), "")
 	if compact {
 		t.pop.send("") // start the window now, so the first click is instant too
+		if t.Onboarding != nil && t.Onboarding() {
+			go func() {
+				time.Sleep(4 * time.Second) // the window loads and the first IP check is in
+				t.pop.send("show")
+			}()
+		}
 		systray.SetOnTapped(t.iconClicked)
 	}
 
@@ -411,6 +418,9 @@ func (t *Tray) render(s guard.Snapshot, evs []guard.Event) {
 		if title, body, ok := Notification(e); ok && cfg.Notifications {
 			app.Notify(title, body)
 		}
+		if msg, ok := TelegramText(e); ok {
+			app.TG.Send(msg)
+		}
 	}
 
 	t.setIcon(s)
@@ -580,6 +590,9 @@ func HeadlessRender(s guard.Snapshot, evs []guard.Event) {
 		app.Logf("%s", line[strings.Index(line, " ")+2:])
 		if title, body, ok := Notification(e); ok && s.Config.Notifications {
 			app.Notify(title, body)
+		}
+		if msg, ok := TelegramText(e); ok {
+			app.TG.Send(msg)
 		}
 	}
 	app.WriteState(app.State{

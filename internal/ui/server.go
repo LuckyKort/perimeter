@@ -17,6 +17,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ef1m03/kordon/internal/app"
@@ -41,12 +42,22 @@ type Server struct {
 	InstallUpdate   func()
 	OpenPanel       func(page string)
 
-	news  *whatsNew
-	token string
-	addr  string
+	news *whatsNew
+
+	tgWaiting bool // a link was opened in Telegram, waiting for the user to press Start
+
+	leakMu      sync.Mutex
+	leakRunning bool
+	leakReport  *app.LeakReport
+	first       *onboarding
+	token       string
+	addr        string
 }
 
 const cookieName = "kordon"
+
+// OnboardingPending: a fresh install that hasn't been through the first setup.
+func (s *Server) OnboardingPending() bool { return s.first != nil && s.first.isPending() }
 
 // PanelInfo is what `kordon panel` reads to find the server.
 type PanelInfo struct {
@@ -78,6 +89,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	s.token = hex.EncodeToString(b)
 	s.news = newWhatsNew(s.Version)
+	s.first = newOnboarding()
 	s.addr = ln.Addr().String()
 	info, _ := json.Marshal(PanelInfo{URL: "http://" + s.addr + "/", Token: s.token})
 	if err := os.WriteFile(panelInfoPath(), info, 0o600); err != nil {
@@ -263,7 +275,7 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 			"check_interval": int(cfg.CheckInterval.D().Seconds()), "min_agree": cfg.MinAgree,
 			"freeze_on_network_change": cfg.FreezeOnNetworkChange, "block_when_offline": cfg.BlockWhenOffline,
 			"check_ipv6": cfg.CheckIPv6, "dns_check": cfg.DNSCheck, "notifications": cfg.Notifications,
-			"menubar": cfg.MenuBar, "update_check": cfg.UpdateCheck, "language": cfg.Language,
+			"menubar": cfg.MenuBar, "update_check": cfg.UpdateCheck, "language": cfg.Language, "usage_ping": cfg.UsagePing,
 		},
 		"autostart":  app.AutostartEnabled(),
 		"stats":      map[string]any{"days": s.Stats.Last(14, now), "total": s.Stats.Total(), "session": snap.Counters},
@@ -272,8 +284,70 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 		"updateInfo": upd,
 		"whatsNew":   map[string]any{"version": newsVer, "notes": newsNotes},
 		"notes":      CurrentNotes(s.Version),
+		"onboarding": map[string]any{"pending": s.first.isPending(), "suggest": s.first.suggest(cfg)},
+		"usagePing":  cfg.UsagePing,
+		"leaks":      s.leaks(),
+		"telegram":   map[string]bool{"linked": app.TG.IsLinked(), "waiting": s.waitingTG()},
 		"paths":      map[string]string{"config": app.ConfigPath(), "log": app.LogPath()},
 	})
+}
+
+// watchTG asks the service every few seconds whether the user pressed Start in the bot.
+func (s *Server) watchTG() {
+	s.leakMu.Lock()
+	if s.tgWaiting {
+		s.leakMu.Unlock()
+		return
+	}
+	s.tgWaiting = true
+	s.leakMu.Unlock()
+	go func() {
+		defer func() {
+			s.leakMu.Lock()
+			s.tgWaiting = false
+			s.leakMu.Unlock()
+		}()
+		for i := 0; i < 60; i++ { // 3 minutes
+			time.Sleep(3 * time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			linked := app.TG.Refresh(ctx)
+			cancel()
+			if linked {
+				app.TG.Send(T("tg.hello"))
+				return
+			}
+		}
+	}()
+}
+
+func (s *Server) waitingTG() bool {
+	s.leakMu.Lock()
+	defer s.leakMu.Unlock()
+	return s.tgWaiting
+}
+
+// checkLeaks runs the deep check in the background; the panel polls the state.
+func (s *Server) checkLeaks(cfg *config.Config) {
+	s.leakMu.Lock()
+	defer s.leakMu.Unlock()
+	if s.leakRunning {
+		return
+	}
+	s.leakRunning = true
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+		defer cancel()
+		r := app.CheckLeaks(ctx, cfg)
+		s.leakMu.Lock()
+		s.leakRunning, s.leakReport = false, &r
+		s.leakMu.Unlock()
+	}()
+}
+
+func (s *Server) leaks() map[string]any {
+	s.leakMu.Lock()
+	defer s.leakMu.Unlock()
+	return map[string]any{"running": s.leakRunning, "report": s.leakReport}
 }
 
 func reasonKey(r guard.Reason) string {
@@ -330,6 +404,7 @@ func (s *Server) apply(a action) error {
 		return s.editAllow(now, a)
 	case "toggle_app":
 		g.ToggleApp(now, a.App)
+		s.first.changed()
 	case "set_rule":
 		return s.setRule(now, a)
 	case "remove_rule":
@@ -394,6 +469,37 @@ func (s *Server) apply(a action) error {
 			return app.OpenURL(a.Value)
 		}
 		return errors.New("unknown link")
+	case "onboard_not_vpn":
+		// First run, the IP that got allowed is the home one: forget it, so the
+		// apps wait until the VPN is on and its IP is allowed instead.
+		g.Update(now, func(c *config.Config) { c.Allow = config.Allow{} })
+	case "onboard_done":
+		if a.Value == "on" || a.Value == "off" {
+			g.Update(now, func(c *config.Config) { c.UsagePing = a.Value })
+		}
+		s.first.finish()
+	case "usage_ping":
+		if a.Value != "on" && a.Value != "off" {
+			return errors.New("usage_ping: on or off")
+		}
+		g.Update(now, func(c *config.Config) { c.UsagePing = a.Value })
+	case "tg_link":
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+		u, err := app.TG.Link(ctx)
+		if err != nil {
+			return errors.New(T("panel.err.tg"))
+		}
+		s.watchTG()
+		return app.OpenURL(u)
+	case "tg_unlink":
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+		app.TG.Unlink(ctx)
+	case "tg_test":
+		app.TG.Send(T("tg.test"))
+	case "check_leaks":
+		s.checkLeaks(s.G.Snapshot(now).Config)
 	case "dismiss_whatsnew":
 		s.news.dismiss()
 	case "open_panel":
@@ -514,6 +620,7 @@ func (s *Server) settings(now time.Time, raw json.RawMessage) error {
 		}
 		for k, allowed := range map[string][]string{
 			"dns_check": {"warn", "block", "off"}, "menubar": {"ip", "country", "icon"}, "language": {"auto", "ru", "en"},
+			"usage_ping": {"ask", "on", "off"},
 		} {
 			if v, ok := m[k].(string); ok {
 				if !slices.Contains(allowed, v) {
@@ -525,6 +632,8 @@ func (s *Server) settings(now time.Time, raw json.RawMessage) error {
 					c.DNSCheck = v
 				case "menubar":
 					c.MenuBar = v
+				case "usage_ping":
+					c.UsagePing = v
 				case "language":
 					c.Language = v
 					Lang = app.Language(v)
