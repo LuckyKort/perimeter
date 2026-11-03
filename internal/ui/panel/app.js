@@ -361,7 +361,7 @@ function settings() {
 function about() {
   return `<div class="card about"><img src="icon.png" alt=""><div class="big">Kordon ${esc(S.version)}</div>
     <p>${t("about_text")}</p>
-    <div class="links"><button class="btn" data-url="https://github.com/ef1m03/kordon">${t("github")}</button><button class="btn" data-url="https://t.me/efimov_dev">${t("telegram")} @efimov_dev</button><button class="btn primary" data-url="https://efimovdev.ru">${t("made")}</button></div>
+    <div class="links"><button class="btn" data-url="https://github.com/ef1m03/kordon">${t("github")}</button><button class="btn" data-url="https://t.me/efimov_dev">${t("telegram")} @efimov_dev</button><button class="btn primary" data-url="${esc(S.studioUrl)}">${t("made")}</button></div>
     <p style="font-size:12px">© Efimov Dev · efimovdev.ru · ${t("license")}</p></div>
   ${S.notes && S.notes.length ? `<h2>${t("whats_new")} ${esc(S.version)}</h2>
   <div class="card notes"><ul>${S.notes.map((n) => `<li><b>${esc(n.title)}</b>${n.text ? ` - ${esc(n.text)}` : ""}</li>`).join("")}</ul>
@@ -375,6 +375,7 @@ function nav() {
   document.getElementById("nav").innerHTML = PAGES.map((p) =>
     `<a href="#${p}" class="${p === page ? "on" : ""}">${svg(p)}<span>${t(p)}</span>${p === "overview" && bad ? `<span class="badge ${S.status}">!</span>` : ""}</a>`).join("");
   document.getElementById("ver").textContent = S.version;
+  document.getElementById("studio").dataset.url = S.studioUrl;
 }
 
 function render() {

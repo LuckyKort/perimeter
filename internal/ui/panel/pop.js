@@ -174,7 +174,7 @@ function render() {
   const html = `<div class="top"><img src="icon.png" alt=""><b>Kordon</b><span class="sp"></span>
       <button class="ib" data-panel="overview" title="${t("panel")}">${svg("panel")}</button></div>
     ${updateCard()}${hero()}${apps()}${actions()}
-    <div class="foot"><button class="open" data-panel="overview">${t("open")}</button><span class="studio">efimovdev.ru</span></div>`;
+    <div class="foot"><button class="open" data-panel="overview">${t("open")}</button><button class="studio" data-url="${esc(S.studioUrl)}">efimovdev.ru</button></div>`;
   if (html === lastHTML) return;
   lastHTML = html;
   document.getElementById("pop").innerHTML = html;
@@ -215,6 +215,11 @@ function toast(msg) {
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b) return;
+  if (b.dataset.url) {
+    await api("open_url", { value: b.dataset.url });
+    native({ op: "hide" });
+    return;
+  }
   if (b.dataset.panel) {
     await api("open_panel", { value: b.dataset.panel });
     native({ op: "hide" });

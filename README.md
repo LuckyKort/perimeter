@@ -422,7 +422,7 @@ CGO_ENABLED=0 go build ./cmd/kordon   # Linux
 ---
 
 <p align="center">
-  © <a href="https://efimovdev.ru"><b>Efimov Dev</b></a> - <a href="https://efimovdev.ru">efimovdev.ru</a><br>
+  © <a href="https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=github"><b>Efimov Dev</b></a> - <a href="https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=github">efimovdev.ru</a><br>
   Нашли ошибку или есть идея - пишите в Telegram <a href="https://t.me/efimov_dev"><b>@efimov_dev</b></a>.<br>
   Лицензия <a href="LICENSE">GPL-3.0</a>. Название и логотип Kordon - <a href="NOTICE">не входят в лицензию</a>.
 </p>

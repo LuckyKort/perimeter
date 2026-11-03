@@ -128,5 +128,5 @@ CGO_ENABLED=0 go build ./cmd/kordon
 
 ---
 
-<p align="center">© <a href="https://efimovdev.ru"><b>Efimov Dev</b></a> - <a href="https://efimovdev.ru">efimovdev.ru</a>. Questions and ideas: Telegram <a href="https://t.me/efimov_dev">@efimov_dev</a>.<br>
+<p align="center">© <a href="https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=github"><b>Efimov Dev</b></a> - <a href="https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=github">efimovdev.ru</a>. Questions and ideas: Telegram <a href="https://t.me/efimov_dev">@efimov_dev</a>.<br>
 License: <a href="LICENSE">GPL-3.0</a> (versions up to 1.2.1: MIT). The Kordon name and logo are <a href="NOTICE">not covered by the license</a>; official builds only from <a href="https://github.com/ef1m03/kordon/releases">Releases</a> (<code>gh attestation verify &lt;file&gt; --repo ef1m03/kordon</code>).</p>

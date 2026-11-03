@@ -22,4 +22,4 @@ irm https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.ps1 | i
 | `kordon-linux-*.tar.gz` | Linux x64 / ARM64 |
 | `SHA256SUMS.txt` | контрольные суммы |
 
-Сделано в [Efimov Dev](https://efimovdev.ru).
+Сделано в [Efimov Dev](https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=release).

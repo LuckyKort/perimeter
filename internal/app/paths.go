@@ -31,6 +31,7 @@ func LockPath() string   { return filepath.Join(Dir(), "kordon.lock") }
 
 const (
 	RepoURL     = "https://github.com/ef1m03/kordon"
-	StudioURL   = "https://efimovdev.ru"
+	// StudioURL is Kordon's page on the studio site; the tag tells it the visit came from the app.
+	StudioURL   = "https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=app"
 	TelegramURL = "https://t.me/efimov_dev"
 )
