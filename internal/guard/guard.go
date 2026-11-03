@@ -585,7 +585,8 @@ func (g *Guard) enforceGroup(now time.Time, gr *group) {
 		alive[p.PID] = true
 		switch gr.status {
 		case Starting, Suspect:
-			if _, ok := gr.frozen[p.PID]; !ok {
+			// A different start time means the PID went to a new process: freeze that one too.
+			if f, ok := gr.frozen[p.PID]; !ok || f.Start != p.Start {
 				if g.d.Procs.Freeze(p) == nil {
 					gr.frozen[p.PID] = p
 				}

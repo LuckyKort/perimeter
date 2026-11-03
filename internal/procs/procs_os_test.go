@@ -72,6 +72,22 @@ func TestRealProcess(t *testing.T) {
 		t.Error("rule by name doesn't match the listed process")
 	}
 
+	if p.Start == 0 {
+		t.Error("start time is unknown")
+	}
+	// Same PID, other start time: as if the PID went to another process. Hands off.
+	stranger := p
+	stranger.Start++
+	if err := c.Freeze(stranger); err != nil {
+		t.Fatalf("freeze stranger: %v", err)
+	}
+	mark := lines(t, out)
+	time.Sleep(300 * time.Millisecond)
+	if lines(t, out) == mark {
+		c.Resume(p)
+		t.Fatal("a process with another start time was frozen")
+	}
+
 	if err := c.Freeze(p); err != nil {
 		t.Fatalf("freeze: %v", err)
 	}

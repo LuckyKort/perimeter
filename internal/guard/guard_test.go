@@ -541,3 +541,25 @@ func TestRemovingRuleResumesWithNotice(t *testing.T) {
 		t.Fatalf("cursor frozen=%v, resumed event=%v", h.p.frozen[cursor.PID], h.had(EvResumed))
 	}
 }
+
+// A frozen app quit and its PID went to a new copy of the app: the new one is frozen too.
+func TestReusedPIDIsFrozenAgain(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	h.step(0)
+	h.probe("64.137.54.87", "NL")
+	h.fp = "en0=192.168.0.10"
+	h.step(500 * time.Millisecond)
+	h.probe("95.24.1.1", "RU")
+	if !h.p.frozen[claude.PID] {
+		t.Fatal("claude not frozen")
+	}
+	h.p.remove(claude.PID)
+	h.p.frozen[claude.PID] = false
+	fresh := claude
+	fresh.Start = 7
+	h.p.procs = append(h.p.procs, fresh)
+	h.step(500 * time.Millisecond)
+	if !h.p.frozen[claude.PID] {
+		t.Fatal("new process with a reused PID was left running")
+	}
+}

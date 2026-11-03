@@ -61,7 +61,7 @@ func (c *osController) List() ([]Proc, error) {
 			ce = cached{created: created, path: imagePath(pid)}
 			c.cache[pid] = ce
 		}
-		out = append(out, Proc{PID: pid, PPID: int(e.ParentProcessID), Name: name, Path: ce.path})
+		out = append(out, Proc{PID: pid, PPID: int(e.ParentProcessID), Start: created, Name: name, Path: ce.path})
 	}
 	for pid := range c.cache {
 		if !seen[pid] {
@@ -77,6 +77,10 @@ func creationTime(pid int) int64 {
 		return 0
 	}
 	defer windows.CloseHandle(h)
+	return handleCreated(h)
+}
+
+func handleCreated(h windows.Handle) int64 {
 	var c, x, k, u windows.Filetime
 	if windows.GetProcessTimes(h, &c, &x, &k, &u) != nil {
 		return 0
@@ -98,8 +102,11 @@ func imagePath(pid int) string {
 	return windows.UTF16ToString(buf[:n])
 }
 
-func withHandle(pid int, access uint32, fn func(windows.Handle) error) error {
-	h, err := windows.OpenProcess(access, false, uint32(pid))
+// withHandle runs fn on a handle to p, unless p's PID now belongs to another
+// process. The start time is read through the same handle, and an open handle
+// keeps Windows from giving the PID to anyone else, so fn can't hit a stranger.
+func withHandle(p Proc, access uint32, fn func(windows.Handle) error) error {
+	h, err := windows.OpenProcess(access|windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(p.PID))
 	if err != nil {
 		if errors.Is(err, windows.ERROR_INVALID_PARAMETER) {
 			return nil // already gone
@@ -107,11 +114,14 @@ func withHandle(pid int, access uint32, fn func(windows.Handle) error) error {
 		return err
 	}
 	defer windows.CloseHandle(h)
+	if p.Start != 0 && handleCreated(h) != p.Start {
+		return nil // the PID was reused
+	}
 	return fn(h)
 }
 
-func ntCall(proc *windows.LazyProc, pid int) error {
-	return withHandle(pid, processSuspendResume, func(h windows.Handle) error {
+func ntCall(proc *windows.LazyProc, p Proc) error {
+	return withHandle(p, processSuspendResume, func(h windows.Handle) error {
 		if st, _, _ := proc.Call(uintptr(h)); st != 0 {
 			return windows.NTStatus(st)
 		}
@@ -119,11 +129,11 @@ func ntCall(proc *windows.LazyProc, pid int) error {
 	})
 }
 
-func (c *osController) Freeze(p Proc) error { return ntCall(ntSuspendProcess, p.PID) }
-func (c *osController) Resume(p Proc) error { return ntCall(ntResumeProcess, p.PID) }
+func (c *osController) Freeze(p Proc) error { return ntCall(ntSuspendProcess, p) }
+func (c *osController) Resume(p Proc) error { return ntCall(ntResumeProcess, p) }
 
 func (c *osController) Kill(p Proc) error {
-	return withHandle(p.PID, windows.PROCESS_TERMINATE, func(h windows.Handle) error {
+	return withHandle(p, windows.PROCESS_TERMINATE, func(h windows.Handle) error {
 		return windows.TerminateProcess(h, 1)
 	})
 }
@@ -147,9 +157,12 @@ var (
 // windows (or that hide to the tray) are force-closed after close_timeout.
 func (c *osController) Close(p Proc) error {
 	_ = c.Resume(p)
-	closeMu.Lock()
-	defer closeMu.Unlock()
-	closeTarget = uint32(p.PID)
-	enumWindows.Call(closeCB, 0)
-	return nil
+	// Holding the handle keeps the PID ours while its windows are looked up.
+	return withHandle(p, windows.SYNCHRONIZE, func(windows.Handle) error {
+		closeMu.Lock()
+		defer closeMu.Unlock()
+		closeTarget = uint32(p.PID)
+		enumWindows.Call(closeCB, 0)
+		return nil
+	})
 }

@@ -14,6 +14,7 @@ import (
 type Proc struct {
 	PID   int
 	PPID  int
+	Start int64  // start time in OS units, 0 if unknown; actions skip a reused PID whose start differs
 	Name  string // executable file name: "Claude", "claude.exe"
 	Path  string // full executable path, may be empty if the OS hides it
 	Args  string // command line, only collected for interpreters (node, python...)

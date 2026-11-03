@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"path/filepath"
 	"sync"
+	"syscall"
 
 	"golang.org/x/sys/unix"
 )
@@ -37,7 +38,7 @@ func (c *osController) List() ([]Proc, error) {
 			continue
 		}
 		seen[pid] = true
-		start := kp.Proc.P_starttime.Sec*1_000_000 + int64(kp.Proc.P_starttime.Usec)
+		start := startUsec(kp)
 		ce, ok := c.cache[pid]
 		if !ok || ce.start != start {
 			// procargs2 is readable for our own user's processes, which is what we protect.
@@ -49,7 +50,7 @@ func (c *osController) List() ([]Proc, error) {
 		if ce.path == "" {
 			name = unix.ByteSliceToString(kp.Proc.P_comm[:])
 		}
-		p := Proc{PID: pid, PPID: int(kp.Eproc.Ppid), Name: name, Path: ce.path}
+		p := Proc{PID: pid, PPID: int(kp.Eproc.Ppid), Start: start, Name: name, Path: ce.path}
 		if isInterpreter(name) {
 			p.Args = ce.args
 		}
@@ -61,6 +62,23 @@ func (c *osController) List() ([]Proc, error) {
 		}
 	}
 	return out, nil
+}
+
+func startUsec(kp *unix.KinfoProc) int64 {
+	return kp.Proc.P_starttime.Sec*1_000_000 + int64(kp.Proc.P_starttime.Usec)
+}
+
+// send signals p unless its PID now belongs to another process. macOS has no
+// pidfd, so a reuse between the check and the signal is still possible, but
+// that window is microseconds instead of the whole freeze.
+func send(p Proc, sig syscall.Signal) error {
+	if p.Start != 0 {
+		kp, err := unix.SysctlKinfoProc("kern.proc.pid", p.PID)
+		if err != nil || int(kp.Proc.P_pid) != p.PID || startUsec(kp) != p.Start {
+			return nil // gone, or the PID was reused
+		}
+	}
+	return signal(p.PID, sig)
 }
 
 // procArgs reads kern.procargs2: argc (int32), exec path, NUL padding, argv..., env...
