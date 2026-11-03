@@ -205,3 +205,8 @@ input:focus, select:focus { outline: 2px solid color-mix(in srgb, var(--accent) 
   .grid, .stats { grid-template-columns: 1fr 1fr; }
   main { padding: 20px 16px; }
 }
+
+.card.notes { padding: 18px 22px; }
+.card.notes ul { margin: 0 0 14px; padding-left: 18px; line-height: 1.55; }
+.card.notes li { margin-bottom: 6px; color: var(--muted); }
+.card.notes li b { color: var(--text); }

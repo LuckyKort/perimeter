@@ -88,14 +88,14 @@ func TestFetchVerifies(t *testing.T) {
 			URL  string `json:"browser_download_url"`
 		}{"SHA256SUMS.txt", srv.URL + "/SHA256SUMS.txt"})
 
-	if _, err := fetch(context.Background(), rel, t.TempDir()); err != nil {
+	if _, err := fetch(context.Background(), rel, t.TempDir(), nil); err != nil {
 		t.Fatalf("good file refused: %v", err)
 	}
 	tampered = true
-	if _, err := fetch(context.Background(), rel, t.TempDir()); !errors.Is(err, ErrChecksum) {
+	if _, err := fetch(context.Background(), rel, t.TempDir(), nil); !errors.Is(err, ErrChecksum) {
 		t.Fatalf("tampered file accepted: %v", err)
 	}
-	if _, err := fetch(context.Background(), Release{Tag: "v1"}, t.TempDir()); err == nil {
+	if _, err := fetch(context.Background(), Release{Tag: "v1"}, t.TempDir(), nil); err == nil {
 		t.Fatal("release without the file accepted")
 	}
 }

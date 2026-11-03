@@ -30,6 +30,7 @@ const latestURL = "https://api.github.com/repos/ef1m03/kordon/releases/latest"
 type Release struct {
 	Tag    string `json:"tag_name"`
 	Page   string `json:"html_url"`
+	Body   string `json:"body"`
 	Assets []struct {
 		Name string `json:"name"`
 		URL  string `json:"browser_download_url"`
@@ -120,7 +121,23 @@ func sumFor(sums, name string) string {
 	return ""
 }
 
-func download(ctx context.Context, url, dst string) error {
+// Progress is told how many bytes of the update are downloaded so far, and of how many (0 if unknown).
+type Progress func(done, total int64)
+
+type counter struct {
+	done, total int64
+	report      Progress
+}
+
+func (c *counter) Write(p []byte) (int, error) {
+	c.done += int64(len(p))
+	if c.report != nil {
+		c.report(c.done, c.total)
+	}
+	return len(p), nil
+}
+
+func download(ctx context.Context, url, dst string, progress Progress) error {
 	req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
 	resp, err := netwatch.HTTPClient(5 * time.Minute).Do(req)
 	if err != nil {
@@ -134,7 +151,11 @@ func download(ctx context.Context, url, dst string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := io.Copy(f, io.LimitReader(resp.Body, 200<<20)); err != nil {
+	body := io.Reader(io.LimitReader(resp.Body, 200<<20))
+	if progress != nil {
+		body = io.TeeReader(body, &counter{total: max(resp.ContentLength, 0), report: progress})
+	}
+	if _, err := io.Copy(f, body); err != nil {
 		f.Close()
 		return err
 	}
@@ -157,20 +178,20 @@ func fileSum(path string) (string, error) {
 var ErrChecksum = errors.New("контрольная сумма не совпала: файл повреждён или подменён, обновление не установлено")
 
 // fetch downloads this platform's file into dir and verifies it.
-func fetch(ctx context.Context, r Release, dir string) (string, error) {
+func fetch(ctx context.Context, r Release, dir string, progress Progress) (string, error) {
 	name := AssetName(runtime.GOOS, runtime.GOARCH)
 	url, sumsURL := r.asset(name), r.asset("SHA256SUMS.txt")
 	if url == "" || sumsURL == "" {
 		return "", fmt.Errorf("в релизе %s нет файла %s", r.Tag, name)
 	}
 	sumsPath := filepath.Join(dir, "SHA256SUMS.txt")
-	if err := download(ctx, sumsURL, sumsPath); err != nil {
+	if err := download(ctx, sumsURL, sumsPath, nil); err != nil {
 		return "", err
 	}
 	sums, _ := os.ReadFile(sumsPath)
 	want := sumFor(string(sums), name)
 	path := filepath.Join(dir, name)
-	if err := download(ctx, url, path); err != nil {
+	if err := download(ctx, url, path, progress); err != nil {
 		return "", err
 	}
 	got, err := fileSum(path)
@@ -185,7 +206,8 @@ func fetch(ctx context.Context, r Release, dir string) (string, error) {
 
 // Install downloads, verifies and puts the new version in place of the running one.
 // It returns a function that starts the new version; call it right before exiting.
-func Install(ctx context.Context, r Release) (restart func() error, err error) {
+// progress may be nil.
+func Install(ctx context.Context, r Release, progress Progress) (restart func() error, err error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return nil, err
@@ -196,7 +218,7 @@ func Install(ctx context.Context, r Release) (restart func() error, err error) {
 		return nil, err
 	}
 	defer os.RemoveAll(dir)
-	file, err := fetch(ctx, r, dir)
+	file, err := fetch(ctx, r, dir, progress)
 	if err != nil {
 		return nil, err
 	}

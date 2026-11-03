@@ -125,7 +125,8 @@ func run(tray bool) {
 		return
 	}
 	t := &ui.Tray{G: r.G, Version: version, OnQuit: stop, UpdateCheck: cfg.UpdateCheck, Stats: stats}
-	srv.UpdateAvailable, srv.InstallUpdate = t.UpdateAvailable, t.InstallUpdate
+	srv.UpdateAvailable, srv.UpdateInfo, srv.InstallUpdate = t.UpdateAvailable, t.UpdateInfo, t.InstallUpdate
+	srv.OpenPanel = ui.OpenPanel
 	go func() {
 		<-sig
 		stop()
@@ -168,7 +169,13 @@ func cli(args []string) error {
 	case "update":
 		return selfUpdate()
 	case "panel":
-		return openPanel()
+		page := ""
+		if len(args) > 1 {
+			page = args[1]
+		}
+		return openPanel(page)
+	case "popover":
+		return runPopover()
 	case "version", "--version", "-v":
 		fmt.Println("kordon", version)
 		return nil
@@ -271,7 +278,7 @@ func selfUpdate() error {
 		return nil
 	}
 	fmt.Println("installing", rel.Version(), "…")
-	restart, err := update.Install(ctx, rel)
+	restart, err := update.Install(ctx, rel, nil)
 	if err != nil {
 		return err
 	}
@@ -287,13 +294,26 @@ func selfUpdate() error {
 	return nil
 }
 
+// runPopover is the tray window: Kordon starts it hidden and sends it "toggle"
+// lines on stdin when the icon is clicked. Not for people, so not in usage.
+func runPopover() error {
+	p, err := ui.ReadPanelInfo()
+	if err != nil {
+		return errors.New("Kordon is not running")
+	}
+	return window.Popover(p.URL+"pop.html?t="+p.Token, os.Stdin)
+}
+
 // openPanel shows the running Kordon's panel in a window (or the browser on Linux).
-func openPanel() error {
+func openPanel(page string) error {
 	p, err := ui.ReadPanelInfo()
 	if err != nil {
 		return errors.New("Kordon is not running - start it first")
 	}
 	url := p.URL + "?t=" + p.Token
+	if page != "" && !strings.ContainsAny(page, "?#&/") {
+		url += "#" + page
+	}
 	if err := window.Open(url, "Kordon", ui.T("panel.close"), ui.T("panel.quit")); err != nil {
 		return app.OpenURL(url)
 	}

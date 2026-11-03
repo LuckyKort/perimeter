@@ -37,8 +37,11 @@ type Server struct {
 	Version string
 	// Optional hooks the tray provides.
 	UpdateAvailable func() string
+	UpdateInfo      func() UpdateInfo
 	InstallUpdate   func()
+	OpenPanel       func(page string)
 
+	news  *whatsNew
 	token string
 	addr  string
 }
@@ -74,6 +77,7 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 	s.token = hex.EncodeToString(b)
+	s.news = newWhatsNew(s.Version)
 	s.addr = ln.Addr().String()
 	info, _ := json.Marshal(PanelInfo{URL: "http://" + s.addr + "/", Token: s.token})
 	if err := os.WriteFile(panelInfoPath(), info, 0o600); err != nil {
@@ -109,7 +113,7 @@ func (s *Server) guardRequest(next http.Handler) http.Handler {
 		if t := r.URL.Query().Get("t"); t != "" && s.tokenOK(t) {
 			// First open: trade the token in the URL for a cookie and drop it from the address.
 			http.SetCookie(w, &http.Cookie{Name: cookieName, Value: s.token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode})
-			http.Redirect(w, r, "/", http.StatusFound)
+			http.Redirect(w, r, r.URL.Path, http.StatusFound)
 			return
 		}
 		c, err := r.Cookie(cookieName)
@@ -232,6 +236,11 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 	if s.UpdateAvailable != nil {
 		update = s.UpdateAvailable()
 	}
+	var upd UpdateInfo
+	if s.UpdateInfo != nil {
+		upd = s.UpdateInfo()
+	}
+	newsVer, newsNotes := s.news.get()
 	pausedUntil := ""
 	if snap.Paused() {
 		if snap.PausedUntil.Sub(now) > 24*time.Hour {
@@ -256,11 +265,14 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 			"check_ipv6": cfg.CheckIPv6, "dns_check": cfg.DNSCheck, "notifications": cfg.Notifications,
 			"menubar": cfg.MenuBar, "update_check": cfg.UpdateCheck, "language": cfg.Language,
 		},
-		"autostart": app.AutostartEnabled(),
-		"stats":     map[string]any{"days": s.Stats.Last(14, now), "total": s.Stats.Total(), "session": snap.Counters},
-		"history":   hist,
-		"update":    update,
-		"paths":     map[string]string{"config": app.ConfigPath(), "log": app.LogPath()},
+		"autostart":  app.AutostartEnabled(),
+		"stats":      map[string]any{"days": s.Stats.Last(14, now), "total": s.Stats.Total(), "session": snap.Counters},
+		"history":    hist,
+		"update":     update,
+		"updateInfo": upd,
+		"whatsNew":   map[string]any{"version": newsVer, "notes": newsNotes},
+		"notes":      CurrentNotes(s.Version),
+		"paths":      map[string]string{"config": app.ConfigPath(), "log": app.LogPath()},
 	})
 }
 
@@ -382,6 +394,13 @@ func (s *Server) apply(a action) error {
 			return app.OpenURL(a.Value)
 		}
 		return errors.New("unknown link")
+	case "dismiss_whatsnew":
+		s.news.dismiss()
+	case "open_panel":
+		if s.OpenPanel == nil {
+			return errors.New("no panel")
+		}
+		s.OpenPanel(a.Value)
 	case "install_update":
 		if s.InstallUpdate == nil {
 			return errors.New("no update")

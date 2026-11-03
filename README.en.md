@@ -10,12 +10,21 @@
   · <a href="README.md">Русский</a>
 </p>
 
+<table>
+  <tr>
+    <td width="33%"><img src="docs/img/tray-ok.png" alt="Kordon tray window: protection is on"><p align="center"><b>All good</b><br><sub>country and IP, protected apps, one-click actions</sub></p></td>
+    <td width="33%"><img src="docs/img/tray-frozen.png" alt="Kordon tray window: apps are paused"><p align="center"><b>The VPN dropped</b><br><sub>apps paused, a ring counts down to closing</sub></p></td>
+    <td width="33%"><img src="docs/img/tray-update.png" alt="Kordon tray window: an update"><p align="center"><b>A new version</b><br><sub>what's new and an Update button</sub></p></td>
+  </tr>
+</table>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/img/panel-overview-dark.png">
     <img src="docs/img/panel-overview-light.png" width="760" alt="Kordon panel: protection status, public IP, IPv6, DNS and network">
   </picture>
 </p>
+<p align="center"><sub>The tray window (screenshots in Russian; the app follows the system language) and the full panel.</sub></p>
 
 ## Why Kordon
 
@@ -35,6 +44,7 @@
 
 ## What it does
 
+- **The tray window**: click the icon and see what matters: protection, country, IP, which apps are protected. Pause, check the IP, allow the country or trust this network in one click. It opens instantly and follows the system's light or dark look.
 - **The Kordon panel**: a real window with status, apps, rules, networks, statistics, history and every setting. No file editing.
 - **Per-app rules**: Claude only from the Netherlands, Cursor from the EU and US. Groups work independently.
 - **Trusted networks**: work without a VPN at home or the office, protected everywhere else. Recognised by the router, no location permission needed.
@@ -51,7 +61,7 @@
 - **Two independent services must agree** on the IP; any disagreement counts as a possible leak.
 - **Instant reaction** to OS network events, and a supervisor that restarts Kordon if it ever crashes.
 - **Proxy-mode VPN clients** (v2rayN, Hiddify, Clash) are handled: the IP is checked through the system proxy, the way your apps see it.
-- **One-click updates**: a new release shows up as "Update to …" in the menu; Kordon downloads it, checks its SHA-256 and restarts. Nothing is installed without your click.
+- **One-click updates**: a new release shows up in the tray window with what's new and an "Update" button; Kordon downloads it (with progress), checks its SHA-256 and restarts, then shows once what changed. Nothing is installed without your click.
 - Pause, event history, a screen-sharing mode that hides the IP, hot-reloaded `config.yaml`.
 - No admin rights, no telemetry, open source.
 
@@ -99,7 +109,7 @@ CLI: `kordon panel`, `kordon status`, `kordon allow [IP|subnet|CC]`, `kordon con
 
 ## What goes over the network
 
-Only two kinds of requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, `checkip.amazonaws.com`, `ipinfo.io/ip`; IPv6: `api6.ipify.org`, `ipv6.icanhazip.com`, `v6.ident.me`; all configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). Plus, once a day, one request to `api.github.com` for the latest version number (`update_check: false` turns it off). No analytics.
+Only two kinds of requests: the public IP (`api.ipify.org`, `ipv4.icanhazip.com`, `v4.ident.me`, `checkip.amazonaws.com`, `ipinfo.io/ip`; IPv6: `api6.ipify.org`, `ipv6.icanhazip.com`, `v6.ident.me`; all configurable) and its country (`ipinfo.io`, falling back to `ipapi.co` and `api.country.is`, cached). Plus, every 6 hours, one request to `api.github.com` for the latest version number (`update_check: false` turns it off). No analytics.
 
 ## How safe is it
 

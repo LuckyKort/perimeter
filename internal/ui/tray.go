@@ -51,7 +51,11 @@ type Tray struct {
 	mBar, mBarIP, mBarCountry, mBarIcon     *systray.MenuItem
 	mAbout, mStudio, mQuit                  *systray.MenuItem
 	mUpdate, mPanel, mTrust, mDNS, mReport  *systray.MenuItem
+	mOpen                                   *systray.MenuItem // "Open Kordon": the tray window
+	pop                                     *popover
 	latest                                  update.Release
+	installing                              bool
+	done, total                             int64
 	quitNow                                 chan struct{}
 }
 
@@ -65,32 +69,63 @@ func (t *Tray) onReady() {
 	systray.SetTooltip("Kordon")
 	t.setIcon(guard.Snapshot{Config: config.Default()})
 
+	// On macOS and Windows a click on the icon opens the tray window; the menu
+	// (right click) keeps only what's needed without it. Everything else still
+	// exists, under a hidden item, so the rest of the code doesn't care.
+	compact := popoverSupported()
+	var hidden *systray.MenuItem
+	if compact {
+		t.pop = &popover{}
+		hidden = systray.AddMenuItem("", "")
+		hidden.Hide()
+	}
+	item := func(title string) *systray.MenuItem {
+		if compact {
+			return hidden.AddSubMenuItem(title, "")
+		}
+		return systray.AddMenuItem(title, "")
+	}
+	itemCheck := func(title string, on bool) *systray.MenuItem {
+		if compact {
+			return hidden.AddSubMenuItemCheckbox(title, "", on)
+		}
+		return systray.AddMenuItemCheckbox(title, "", on)
+	}
+	sep := func() {
+		if !compact {
+			systray.AddSeparator()
+		}
+	}
+
 	t.mUpdate = systray.AddMenuItem("", "")
 	t.mUpdate.Hide()
+	if compact {
+		t.mOpen = systray.AddMenuItem(T("open.pop"), "")
+	}
 	t.mPanel = systray.AddMenuItem(T("panel"), "")
 	systray.AddSeparator()
-	t.mStatus = systray.AddMenuItem(T("starting"), "")
+	t.mStatus = item(T("starting"))
 	t.mStatus.Disable()
-	t.mNow = systray.AddMenuItem(T("now.unknown"), "")
+	t.mNow = item(T("now.unknown"))
 	t.mNow.Disable()
-	t.mNow6 = systray.AddMenuItem("", "")
+	t.mNow6 = item("")
 	t.mNow6.Disable()
 	t.mNow6.Hide()
-	t.mOthers = systray.AddMenuItem("", "")
+	t.mOthers = item("")
 	t.mOthers.Disable()
 	t.mOthers.Hide()
-	t.mDNS = systray.AddMenuItem("", "")
+	t.mDNS = item("")
 	t.mDNS.Disable()
 	t.mDNS.Hide()
-	t.mAllowed = systray.AddMenuItem("", "")
+	t.mAllowed = item("")
 	t.mAllowed.Disable()
-	systray.AddSeparator()
+	sep()
 
-	t.mAllowIP = systray.AddMenuItem("", "")
-	t.mAllowCountry = systray.AddMenuItem("", "")
+	t.mAllowIP = item("")
+	t.mAllowCountry = item("")
 	t.mAllowIP.Hide()
 	t.mAllowCountry.Hide()
-	t.mTrust = systray.AddMenuItem(T("trust"), "")
+	t.mTrust = item(T("trust"))
 	t.mTrust.Hide()
 	t.mCheck = systray.AddMenuItem(T("check"), "")
 	t.mPause = systray.AddMenuItem(T("pause"), "")
@@ -101,7 +136,7 @@ func (t *Tray) onReady() {
 	t.mUnpause.Hide()
 	systray.AddSeparator()
 
-	t.mApps = systray.AddMenuItem(T("apps"), "")
+	t.mApps = item(T("apps"))
 	t.appItems = map[string]*systray.MenuItem{}
 	for i, p := range procs.Presets {
 		if p.Browser && !procs.Presets[i-1].Browser {
@@ -118,7 +153,7 @@ func (t *Tray) onReady() {
 	}
 	t.mAddApp = t.mApps.AddSubMenuItem(T("apps.edit"), "")
 
-	t.mHistory = systray.AddMenuItem(T("history"), "")
+	t.mHistory = item(T("history"))
 	for i := 0; i < historyItems; i++ {
 		it := t.mHistory.AddSubMenuItem("", "")
 		it.Disable()
@@ -128,21 +163,25 @@ func (t *Tray) onReady() {
 	for _, it := range t.hist[1:] {
 		it.Hide()
 	}
-	systray.AddSeparator()
+	sep()
 
-	t.mSettings = systray.AddMenuItem(T("settings"), "")
-	t.mLog = systray.AddMenuItem(T("log"), "")
-	t.mReport = systray.AddMenuItem(T("report"), "")
-	t.mAutostart = systray.AddMenuItemCheckbox(T("autostart"), "", app.AutostartEnabled())
-	t.mBar = systray.AddMenuItem(T("menubar"), "")
+	t.mSettings = item(T("settings"))
+	t.mLog = item(T("log"))
+	t.mReport = item(T("report"))
+	t.mAutostart = itemCheck(T("autostart"), app.AutostartEnabled())
+	t.mBar = item(T("menubar"))
 	t.mBarIP = t.mBar.AddSubMenuItemCheckbox(T("menubar.ip"), "", false)
 	t.mBarCountry = t.mBar.AddSubMenuItemCheckbox(T("menubar.country"), "", false)
 	t.mBarIcon = t.mBar.AddSubMenuItemCheckbox(T("menubar.icon"), "", false)
-	systray.AddSeparator()
-	t.mAbout = systray.AddMenuItem(T("about", t.Version), "")
-	t.mStudio = systray.AddMenuItem(T("studio"), "")
-	systray.AddSeparator()
+	sep()
+	t.mAbout = item(T("about", t.Version))
+	t.mStudio = item(T("studio"))
+	sep()
 	t.mQuit = systray.AddMenuItem(T("quit"), "")
+	if compact {
+		t.pop.send("") // start the window now, so the first click is instant too
+		systray.SetOnTapped(t.iconClicked)
+	}
 
 	t.G.OnChange(t.render)
 	t.render(t.G.Snapshot(time.Now()), nil)
@@ -161,6 +200,10 @@ func (t *Tray) loop() {
 			}
 		}(id, it)
 	}
+	var openClicks chan struct{} // nil without the tray window: never fires
+	if t.mOpen != nil {
+		openClicks = t.mOpen.ClickedCh
+	}
 	setBar := func(v string) {
 		t.G.Update(time.Now(), func(c *config.Config) { c.MenuBar = v })
 	}
@@ -171,10 +214,14 @@ func (t *Tray) loop() {
 		case <-t.mAllowCountry.ClickedCh:
 			t.G.AllowCurrentCountry(time.Now())
 		case <-t.mPanel.ClickedCh:
-			OpenPanel()
+			OpenPanel("")
+		case <-openClicks:
+			if !t.pop.send("show") {
+				OpenPanel("")
+			}
 		case <-t.mTrust.ClickedCh:
 			t.G.TrustCurrentNetwork(time.Now(), "")
-			OpenPanel() // to give it a name
+			OpenPanel("networks") // to give it a name
 		case <-t.mReport.ClickedCh:
 			_ = app.OpenURL(app.ReportURL(t.Version))
 		case <-t.mCheck.ClickedCh:
@@ -226,7 +273,22 @@ func (t *Tray) loop() {
 	}
 }
 
-// updateLoop checks GitHub a minute after start and then once a day.
+// iconClicked: a left click on the icon opens the tray window, or the menu if
+// the window can't start.
+func (t *Tray) iconClicked() {
+	if rightClick() {
+		return // macOS reports a right click here too; the menu opens on its own
+	}
+	if !t.pop.send("toggle") {
+		systray.SetOnTapped(nil) // from now on a click shows the menu
+		app.Logf("окно в трее не запускается, по клику будет меню")
+	}
+}
+
+// updateCheckEvery: often enough that a fix reaches people the same day.
+const updateCheckEvery = 6 * time.Hour
+
+// updateLoop checks GitHub a minute after start and then every few hours.
 func (t *Tray) updateLoop() {
 	time.Sleep(time.Minute)
 	notified := ""
@@ -247,7 +309,7 @@ func (t *Tray) updateLoop() {
 				app.Logf("доступна версия %s", rel.Version())
 			}
 		}
-		time.Sleep(24 * time.Hour)
+		time.Sleep(updateCheckEvery)
 	}
 }
 
@@ -261,6 +323,17 @@ func (t *Tray) UpdateAvailable() string {
 	return ""
 }
 
+// UpdateInfo is the newer version with its notes and download progress, or a zero value.
+func (t *Tray) UpdateInfo() UpdateInfo {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if !update.Newer(t.Version, t.latest.Version()) {
+		return UpdateInfo{}
+	}
+	return UpdateInfo{Version: t.latest.Version(), Notes: update.Notes(update.ReleaseNotes(t.latest.Body)), Page: t.latest.Page,
+		Installing: t.installing, Done: t.done, Total: t.total}
+}
+
 // InstallUpdate is the panel's "Update" button.
 func (t *Tray) InstallUpdate() {
 	if t.installUpdate() {
@@ -272,15 +345,26 @@ func (t *Tray) InstallUpdate() {
 func (t *Tray) installUpdate() bool {
 	t.mu.Lock()
 	rel := t.latest
-	t.mu.Unlock()
-	if rel.Tag == "" {
+	if rel.Tag == "" || t.installing {
+		t.mu.Unlock()
 		return false
 	}
+	t.installing, t.done, t.total = true, 0, 0
+	t.mu.Unlock()
+	defer func() {
+		t.mu.Lock()
+		t.installing = false
+		t.mu.Unlock()
+	}()
 	t.mUpdate.SetTitle(T("update.installing", rel.Version()))
 	t.mUpdate.Disable()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	restart, err := update.Install(ctx, rel)
+	restart, err := update.Install(ctx, rel, func(done, total int64) {
+		t.mu.Lock()
+		t.done, t.total = done, total
+		t.mu.Unlock()
+	})
 	if err != nil {
 		app.Logf("обновление не установилось: %v", err)
 		app.Notify(T("update.failed.t"), T("update.failed.b", err))
@@ -504,13 +588,13 @@ func HeadlessRender(s guard.Snapshot, evs []guard.Event) {
 	})
 }
 
-// OpenPanel starts `kordon panel`, which shows the panel window.
-func OpenPanel() {
+// OpenPanel starts `kordon panel`, which shows the panel window, on a page ("" - the overview).
+func OpenPanel(page string) {
 	exe, err := os.Executable()
 	if err != nil {
 		return
 	}
-	cmd := exec.Command(exe, "panel")
+	cmd := exec.Command(exe, "panel", page)
 	cmd.Env = append(os.Environ(), "KORDON_CHILD=1") // the panel needs no supervisor
 	_ = cmd.Start()
 }

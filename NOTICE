@@ -13,3 +13,7 @@ https://github.com/ef1m03/kordon/releases and carry a GitHub build attestation.
 форк должны называться иначе, использовать другой логотип и не выдавать себя за
 Kordon или его официальную сборку. Официальные сборки - только с
 https://github.com/ef1m03/kordon/releases, у каждой есть аттестация сборки GitHub.
+
+Fonts in internal/ui/panel/fonts: Golos Text (Copyright 2019 The Golos Text Project Authors) and
+Unbounded (Copyright 2022 The Unbounded Project Authors), both under the SIL Open Font License 1.1;
+the license texts are next to the font files.

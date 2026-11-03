@@ -39,9 +39,9 @@ const L = {
     o_interval: "Сверять IP раз в", o_interval_d: "Когда всё в порядке", o_agree: "Сервисов должны совпасть", o_agree_d: "Чтобы поверить IP",
     o_menubar: "Рядом со значком", mb_ip: "Страна и IP", mb_country: "Только страна", mb_icon: "Ничего",
     o_lang: "Язык", lang_auto: "Как в системе", o_notify: "Уведомления",
-    o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Раз в сутки, ставятся только по клику",
+    o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Несколько раз в день, ставятся только по клику",
     open_config: "Открыть config.yaml", open_log: "Открыть журнал", report: "Сообщить о проблеме", sec: "с",
-    update_avail: "Доступна версия", update_btn: "Обновить", saved: "Сохранено", about_text: "Kill switch для приложений: замораживает выбранные программы, когда отваливается VPN или меняется IP. Открытый код, без телеметрии.",
+    update_avail: "Доступна версия", update_btn: "Обновить", saved: "Сохранено", whats_new: "Что нового в", all_changes: "Все версии", about_text: "Kill switch для приложений: замораживает выбранные программы, когда отваливается VPN или меняется IP. Открытый код, без телеметрии.",
     made: "Сделано в Efimov Dev", github: "Kordon на GitHub", license: "Лицензия GPL-3.0", telegram: "Написать в Telegram",
     history_empty: "Пока ничего не случилось", paused_until: "Пауза до", paused_forever: "Пауза до перезапуска",
   },
@@ -80,9 +80,9 @@ const L = {
     o_interval: "Check the IP every", o_interval_d: "While all is well", o_agree: "Services must agree", o_agree_d: "To trust an IP",
     o_menubar: "Next to the icon", mb_ip: "Country and IP", mb_country: "Country only", mb_icon: "Nothing",
     o_lang: "Language", lang_auto: "System", o_notify: "Notifications",
-    o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "Once a day, installed only when you click",
+    o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "A few times a day, installed only when you click",
     open_config: "Open config.yaml", open_log: "Open log", report: "Report a problem", sec: "s",
-    update_avail: "Version available:", update_btn: "Update", saved: "Saved", about_text: "A kill switch for apps: freezes the apps you choose when the VPN drops or your IP changes. Open source, no telemetry.",
+    update_avail: "Version available:", update_btn: "Update", saved: "Saved", whats_new: "What's new in", all_changes: "All versions", about_text: "A kill switch for apps: freezes the apps you choose when the VPN drops or your IP changes. Open source, no telemetry.",
     made: "Made by Efimov Dev", github: "Kordon on GitHub", license: "GPL-3.0 license", telegram: "Message on Telegram",
     history_empty: "Nothing has happened yet", paused_until: "Paused until", paused_forever: "Paused until restart",
   },
@@ -362,7 +362,10 @@ function about() {
   return `<div class="card about"><img src="icon.png" alt=""><div class="big">Kordon ${esc(S.version)}</div>
     <p>${t("about_text")}</p>
     <div class="links"><button class="btn" data-url="https://github.com/ef1m03/kordon">${t("github")}</button><button class="btn" data-url="https://t.me/efimov_dev">${t("telegram")} @efimov_dev</button><button class="btn primary" data-url="https://efimovdev.ru">${t("made")}</button></div>
-    <p style="font-size:12px">© Efimov Dev · efimovdev.ru · ${t("license")}</p></div>`;
+    <p style="font-size:12px">© Efimov Dev · efimovdev.ru · ${t("license")}</p></div>
+  ${S.notes && S.notes.length ? `<h2>${t("whats_new")} ${esc(S.version)}</h2>
+  <div class="card notes"><ul>${S.notes.map((n) => `<li><b>${esc(n.title)}</b>${n.text ? ` - ${esc(n.text)}` : ""}</li>`).join("")}</ul>
+  <button class="btn small" data-url="https://github.com/ef1m03/kordon/blob/main/CHANGELOG.md">${t("all_changes")}</button></div>` : ""}`;
 }
 
 const RENDER = { overview, apps, allow, networks, stats, history, settings, about };
