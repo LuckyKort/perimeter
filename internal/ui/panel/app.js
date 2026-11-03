@@ -357,7 +357,7 @@ function about() {
   return `<div class="card about"><img src="icon.png" alt=""><div class="big">Kordon ${esc(S.version)}</div>
     <p>${t("about_text")}</p>
     <div class="links"><button class="btn" data-url="https://github.com/ef1m03/kordon">${t("github")}</button><button class="btn" data-url="https://t.me/efimov_dev">${t("telegram")} @efimov_dev</button><button class="btn primary" data-url="https://efimovdev.ru">${t("made")}</button></div>
-    <p style="font-size:12px">${t("license")} · ef1m03</p></div>`;
+    <p style="font-size:12px">© Efimov Dev · efimovdev.ru · ${t("license")}</p></div>`;
 }
 
 const RENDER = { overview, apps, allow, networks, stats, history, settings, about };

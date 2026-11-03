@@ -14,7 +14,7 @@ WINVER="$(echo "$VERSION" | grep -Eo '^[0-9]+(\.[0-9]+){0,3}' || echo 0.0.0)"
 (cd cmd/kordon && go run github.com/tc-hib/go-winres@v0.3.3 simply \
   --icon ../../build/icons/icon-256.png --manifest gui \
   --product-name Kordon --file-description "Kordon - kill switch for apps" \
-  --copyright "ef1m03, Efimov Dev, GPL-3.0" --original-filename kordon.exe \
+  --copyright "© Efimov Dev - efimovdev.ru" --original-filename kordon.exe \
   --product-version "$WINVER" --file-version "$WINVER" --arch amd64,arm64)
 
 for arch in amd64 arm64; do
