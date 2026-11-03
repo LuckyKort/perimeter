@@ -241,7 +241,7 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 	}
 	writeJSON(w, map[string]any{
 		"lang": Lang, "goos": runtime.GOOS, "version": s.Version,
-		"status": panelStatus(snap), "statusText": StatusLine(snap), "reason": reasonKey(snap.Reason),
+		"status": panelStatus(snap), "statusText": StatusLine(snap), "reason": reasonKey(snap.Reason), "reasonText": reasonText(snap.Reason),
 		"graceLeft": int(snap.GraceLeft.Seconds()), "paused": snap.Paused(), "pausedUntil": pausedUntil,
 		"ip": snap.IP, "country": countryOf(snap.Country), "ip6": snap.IP6, "country6": countryOf(snap.Country6),
 		"others": snap.Others, "offline": snap.Offline, "allowedNow": snap.AllowedNow,

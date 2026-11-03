@@ -99,7 +99,8 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 .paused .orb { background: var(--gray); }
 .hero .title { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
 .hero .sub { color: var(--muted); margin-top: 2px; }
-.hero .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.hero .hero-text { flex: 1; min-width: 0; }
+.hero .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 52%; }
 .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--warn); transition: width 1s linear; }
 
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }

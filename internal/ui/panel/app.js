@@ -15,7 +15,9 @@ const L = {
     lead_history: "Последние события",
     lead_settings: "Изменения сохраняются сразу",
     ip: "Внешний IP", ipv6: "IPv6", dns: "DNS", network: "Сеть", none: "нет", offline: "нет интернета", checking: "проверяю…",
-    ipv6_none: "IPv6 нет или он выключен", dns_ok: "идёт через VPN", dns_leak: "идёт мимо VPN", dns_unknown: "не удалось определить",
+    ipv6_none: "IPv6 нет или он выключен", dns_ok: "та же страна, что у IP", dns_leak: "идёт мимо VPN",
+    h_ok: "Защита включена", h_frozen: "Приложения заморожены", h_blocked: "Приложения закрыты", h_starting: "Проверяю IP…", close_in: "закрою через",
+    no_apps: "Защищаемые приложения не запущены", dns_unknown: "не удалось определить",
     trusted_net: "Доверенная сеть", usual_net: "Обычная сеть", unknown_net: "Роутер не виден",
     trust: "Доверять этой сети", allow_ip: "Разрешить этот IP", allow_country: "Разрешить страну", check: "Проверить",
     pause: "Пауза", pause15: "15 минут", pause60: "1 час", pauseF: "До перезапуска", unpause: "Снять паузу",
@@ -54,7 +56,9 @@ const L = {
     lead_history: "Recent events",
     lead_settings: "Changes are saved right away",
     ip: "Public IP", ipv6: "IPv6", dns: "DNS", network: "Network", none: "none", offline: "no internet", checking: "checking…",
-    ipv6_none: "No IPv6, or it's off", dns_ok: "goes through the VPN", dns_leak: "bypasses the VPN", dns_unknown: "couldn't tell",
+    ipv6_none: "No IPv6, or it's off", dns_ok: "same country as the IP", dns_leak: "bypasses the VPN",
+    h_ok: "Protection is on", h_frozen: "Apps are frozen", h_blocked: "Apps are closed", h_starting: "Checking IP…", close_in: "closing in",
+    no_apps: "No protected apps are running", dns_unknown: "couldn't tell",
     trusted_net: "Trusted network", usual_net: "Regular network", unknown_net: "Router not visible",
     trust: "Trust this network", allow_ip: "Allow this IP", allow_country: "Allow country", check: "Check",
     pause: "Pause", pause15: "15 minutes", pause60: "1 hour", pauseF: "Until restart", unpause: "Resume",
@@ -157,10 +161,22 @@ function heroActions() {
   return a.join("");
 }
 
-function heroSub() {
-  const run = S.apps.filter((a) => a.running).map((a) => esc(a.name));
+function heroTitle() {
   if (S.paused) return S.pausedUntil === "forever" ? t("paused_forever") : `${t("paused_until")} ${esc(S.pausedUntil)}`;
-  return run.length ? `${run.join(", ")} · ${S.status === "frozen" ? t("frozen") : S.status === "blocked" ? t("blocked") : t("running")}` : "";
+  return t("h_" + S.status);
+}
+
+// The reason and countdown, then every running app with its own state:
+// apps with their own rules can be fine while the rest are frozen.
+function heroSub() {
+  const lines = [];
+  if (!S.paused && (S.status === "frozen" || S.status === "blocked") && S.reasonText) {
+    lines.push(esc(S.reasonText) + (S.status === "frozen" && S.reason !== "net" ? ` · ${t("close_in")} ${S.graceLeft} ${t("sec")}` : ""));
+  }
+  const run = S.apps.filter((a) => a.running);
+  if (!run.length) lines.push(t("no_apps"));
+  else lines.push(run.map((a) => `${esc(a.name)} - ${a.status === "frozen" ? t("frozen") : a.status === "blocked" ? t("blocked") : t("ok")}`).join(" · "));
+  return lines.join("<br>");
 }
 
 function overview() {
@@ -179,7 +195,7 @@ function overview() {
   return `${upd}
   <div class="card hero ${S.status}">
     <div class="orb">${svg(icon)}</div>
-    <div><div class="title">${esc(S.statusText)}</div><div class="sub">${heroSub()}</div></div>
+    <div class="hero-text"><div class="title">${heroTitle()}</div><div class="sub">${heroSub()}</div></div>
     <div class="actions">${heroActions()}</div>${bar}
   </div>
   <div class="grid">

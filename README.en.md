@@ -1,10 +1,6 @@
-<p align="center"><img src="docs/img/icon.png" width="128" alt="Kordon"></p>
+<p align="center"><img src="docs/img/hero.png" alt="Kordon - a kill switch for apps"></p>
 
-<h1 align="center">Kordon</h1>
-
-<p align="center">
-  <b>A kill switch for apps.</b> Your VPN drops, your IP changes or the internet goes away - Kordon freezes the apps you chose within a fraction of a second. The right IP is back - they carry on as if nothing happened.
-</p>
+<h3 align="center">A kill switch for apps. Your VPN drops, your IP changes or the internet goes away - Kordon freezes the apps you chose within a fraction of a second. The right IP is back - they carry on as if nothing happened.</h3>
 
 <p align="center">
   <a href="https://github.com/ef1m03/kordon/releases/latest"><img src="https://img.shields.io/github/v/release/ef1m03/kordon" alt="release"></a>

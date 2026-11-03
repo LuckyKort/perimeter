@@ -1,12 +1,8 @@
 <p align="center">
-  <img src="docs/img/icon.png" width="128" alt="Kordon">
+  <img src="docs/img/hero.png" alt="Kordon - kill switch для приложений: VPN отвалился - программы замёрзли, вернулся - работают дальше">
 </p>
 
-<h1 align="center">Kordon</h1>
-
-<p align="center">
-  <b>Kill switch для приложений.</b> Отвалился VPN, сменился IP или пропал интернет - Kordon за долю секунды замораживает нужные программы. Вернулся правильный IP - они продолжают работу как ни в чём не бывало.
-</p>
+<h3 align="center">Kill switch для приложений. Отвалился VPN, сменился IP или пропал интернет - Kordon за долю секунды замораживает нужные программы. Вернулся правильный IP - они продолжают работу как ни в чём не бывало.</h3>
 
 <p align="center">
   <a href="https://github.com/ef1m03/kordon/releases/latest"><img src="https://img.shields.io/github/v/release/ef1m03/kordon?label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F" alt="версия"></a>
@@ -24,12 +20,12 @@
   <a href="README.en.md">English</a>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/img/panel-overview-dark.png">
-    <img src="docs/img/panel-overview-light.png" width="760" alt="Панель Kordon: статус защиты, внешний IP, IPv6, DNS и сеть">
-  </picture>
-</p>
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/panel-overview-light.png" alt="Обзор: защита включена"><p align="center"><b>Всё в порядке</b><br><sub>IP, IPv6, DNS, сеть и что запущено</sub></p></td>
+    <td width="50%"><img src="docs/img/panel-frozen-dark.png" alt="Обзор: приложения заморожены"><p align="center"><b>VPN отвалился</b><br><sub>приложения заморожены, идёт отсчёт, разрешить IP - одной кнопкой</sub></p></td>
+  </tr>
+</table>
 
 ## Зачем
 
@@ -155,7 +151,22 @@ curl -fsSL https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.
 
 Открывается из меню: **«Открыть панель Kordon…»**. На Mac это обычное окно приложения, на Windows - отдельное окно Edge без адресной строки (Edge есть в каждой Windows), на Linux - вкладка браузера.
 
-<p align="center"><img src="docs/img/panel-apps-light.png" width="760" alt="Панель Kordon: приложения и свои правила для Cursor"></p>
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/panel-apps-light.png" alt="Приложения и свои правила"><p align="center"><b>Приложения</b><br><sub>переключатели и свои правила: Cursor можно в NL, DE и US</sub></p></td>
+    <td width="50%"><img src="docs/img/panel-networks-dark.png" alt="Доверенные сети"><p align="center"><b>Сети</b><br><sub>дома и в офисе - без VPN, в остальных сетях защита</sub></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/img/panel-stats-light.png" alt="Статистика"><p align="center"><b>Статистика</b><br><sub>сколько раз VPN вернулся вовремя и сколько раз Kordon закрыл приложения</sub></p></td>
+    <td width="50%"><img src="docs/img/panel-history-dark.png" alt="История"><p align="center"><b>История</b><br><sub>смены сети и IP, заморозки, закрытия</sub></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/img/panel-settings-light.png" alt="Настройки"><p align="center"><b>Настройки</b><br><sub>всё из config.yaml - переключателями</sub></p></td>
+    <td width="50%"><img src="docs/img/menu-mac.png" alt="Меню в строке меню macOS"><p align="center"><b>Строка меню</b><br><sub>флаг и IP всегда на виду, быстрые действия</sub></p></td>
+  </tr>
+</table>
+
+<sub>На скриншотах демонстрационные данные. Адрес роутера скрыт.</sub>
 
 - **Обзор** - статус, внешний IP, IPv6, DNS, текущая сеть и кнопки «Разрешить этот IP», «Пауза», «Проверить».
 - **Приложения** - переключатели для готовых наборов, свои приложения и свои правила для каждого.
@@ -163,8 +174,6 @@ curl -fsSL https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.
 - **Сети** - доверенные сети: «Доверять этой сети», переименовать, удалить.
 - **Статистика** и **История** - что происходило.
 - **Настройки** - всё из `config.yaml`, переключателями.
-
-<p align="center"><img src="docs/img/panel-settings-dark.png" width="760" alt="Панель Kordon: настройки"></p>
 
 Панель - это страница, которую отдаёт сам Kordon только на `127.0.0.1`. Открыть её можно только из меню: каждый запуск Kordon придумывает новый секретный ключ, без него сервер не отвечает. Так до настроек не дотянется ни сайт в браузере, ни другой пользователь компьютера.
 
