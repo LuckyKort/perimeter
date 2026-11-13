@@ -150,7 +150,23 @@ p.hint { color: var(--muted); font-size: 13px; line-height: 1.55; margin: -4px 0
 .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--warn); border-radius: 0 3px 3px 0; transition: width 1s linear; box-shadow: 0 0 10px var(--warn); }
 .banner { display: flex; align-items: center; gap: 12px; padding: 14px 18px; margin-bottom: 16px; border-radius: var(--r-card);
   background: radial-gradient(80% 160% at 0% 50%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%), var(--card); box-shadow: var(--shadow); }
-.banner .grow { flex: 1; }
+.banner .grow { flex: 1; min-width: 0; }
+/* while updating, the blue tint fills the block from the left in step with the bar,
+   with a soft leading edge; --p is animatable thanks to @property */
+@property --p { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+.upd-run { display: block; padding: 16px 18px 14px; transition: --p .4s var(--ease);
+  background: linear-gradient(90deg,
+      color-mix(in srgb, var(--accent) 24%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 16%, transparent) var(--p),
+      transparent calc(var(--p) + 14%)),
+    var(--card); }
+.upd-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.upd-h .muted { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.upd-note { font-size: 12.5px; margin-top: 8px; }
+.ubar { height: 6px; border-radius: 999px; background: var(--fill-h); overflow: hidden; margin-top: 12px; }
+.ubar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width .4s var(--ease); }
+.ubar.unknown i { width: 35%; animation: slide 1.2s var(--ease) infinite alternate; }
+@keyframes slide { from { transform: translateX(-30%); } to { transform: translateX(215%); } }
 
 /* info tiles: label, value, context - three clear steps */
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }

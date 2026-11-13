@@ -172,8 +172,9 @@ const windowRadius = 26
 
 // Open shows the panel and blocks until the window is closed. nextPage tells
 // which page to switch to when Perimeter asks this panel to come forward
-// (SIGUSR1) instead of opening a second one.
-func Open(url, title, closeTitle, quitTitle string, nextPage func() string) error {
+// (SIGUSR1) instead of opening a second one; freshURL gives Perimeter's current
+// address, which changes when it restarts (after an update).
+func Open(url, title, closeTitle, quitTitle string, nextPage, freshURL func() string) error {
 	r := float64(C.perimeter_modern_corners(windowRadius)) // before the window is created
 	w := webview.New(false)
 	defer w.Destroy()
@@ -199,6 +200,20 @@ func Open(url, title, closeTitle, quitTitle string, nextPage func() string) erro
 	// ~0.8 s normally; the first start of a new build is slower (macOS checks it).
 	fallback := time.AfterFunc(2500*time.Millisecond, reveal)
 	defer fallback.Stop()
+
+	// Perimeter restarted (an update): the page lost it and asks for the new address.
+	current := url
+	_ = w.Bind("perimeterReconnect", func(page string) {
+		u := freshURL()
+		if u == "" || u == current {
+			return
+		}
+		current = u
+		if page != "" && !strings.ContainsAny(page, "?#&/\\\"'<>") {
+			u += "#" + page
+		}
+		w.Dispatch(func() { w.Navigate(u) })
+	})
 
 	// Perimeter asks this window to come forward, maybe on another page.
 	sig := make(chan os.Signal, 1)

@@ -315,7 +315,14 @@ func openPanel(page string) error {
 		url += "#" + page
 	}
 	nextPage := func() string { b, _ := os.ReadFile(ui.PanelPagePath()); return strings.TrimSpace(string(b)) }
-	if err := window.Open(url, "Perimeter", ui.T("panel.close"), ui.T("panel.quit"), nextPage); err != nil {
+	freshURL := func() string {
+		q, err := ui.ReadPanelInfo()
+		if err != nil {
+			return ""
+		}
+		return q.URL + "?t=" + q.Token
+	}
+	if err := window.Open(url, "Perimeter", ui.T("panel.close"), ui.T("panel.quit"), nextPage, freshURL); err != nil {
 		return app.OpenURL(url)
 	}
 	return nil

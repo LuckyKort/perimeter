@@ -11,7 +11,7 @@ import (
 // Open shows the panel as an Edge "app" window: no tabs or address bar, its own
 // window in the taskbar. Edge ships with every Windows 10/11, so nothing extra
 // is needed. A separate profile folder keeps it away from the user's own Edge.
-func Open(url, _, _, _ string, _ func() string) error {
+func Open(url, _, _, _ string, _, _ func() string) error {
 	edge := findEdge()
 	if edge == "" {
 		return errors.New("Microsoft Edge not found")

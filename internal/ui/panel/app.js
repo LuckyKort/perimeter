@@ -59,7 +59,8 @@ const L = {
     o_lang: "Язык", lang_auto: "Как в системе", o_notify: "Уведомления",
     o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Несколько раз в день, ставятся только по клику", on: "Да", off: "Нет",
     open_config: "Открыть config.yaml", open_log: "Открыть журнал", report: "Сообщить о проблеме", sec: "с",
-    update_avail: "Доступна версия", update_btn: "Обновить", saved: "Сохранено", whats_new: "Что нового в", all_changes: "Все версии", about_text: "Kill switch для приложений: замораживает выбранные программы, когда отваливается VPN или меняется IP. Открытый код, ничего не отправляет без вашего согласия.",
+    update_avail: "Доступна версия", update_btn: "Обновить", upd_installing: "Обновляю до", upd_restart: "Перезапускаю Perimeter…", upd_of: "из", upd_mb: "МБ",
+    upd_note: "Сверю контрольную сумму и перезапущу. Защита не прерывается.", saved: "Сохранено", whats_new: "Что нового в", all_changes: "Все версии", about_text: "Kill switch для приложений: замораживает выбранные программы, когда отваливается VPN или меняется IP. Открытый код, ничего не отправляет без вашего согласия.",
     based_on: "Основано на Kordon © Efimov Dev", github: "Perimeter на GitHub", license: "Лицензия GPL-3.0",
     history_empty: "Пока ничего не случилось", g_log: "Журнал",
     es_hist: "Здесь появятся заморозки, возвраты VPN и закрытые приложения.",
@@ -121,7 +122,8 @@ const L = {
     o_lang: "Language", lang_auto: "System", o_notify: "Notifications",
     o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "A few times a day, installed only when you click", on: "Yes", off: "No",
     open_config: "Open config.yaml", open_log: "Open log", report: "Report a problem", sec: "s",
-    update_avail: "Version available:", update_btn: "Update", saved: "Saved", whats_new: "What's new in", all_changes: "All versions", about_text: "A kill switch for apps: freezes the apps you choose when the VPN drops or your IP changes. Open source, sends nothing without your consent.",
+    update_avail: "Version available:", update_btn: "Update", upd_installing: "Updating to", upd_restart: "Restarting Perimeter…", upd_of: "of", upd_mb: "MB",
+    upd_note: "I'll check the checksum and restart. Protection stays on.", saved: "Saved", whats_new: "What's new in", all_changes: "All versions", about_text: "A kill switch for apps: freezes the apps you choose when the VPN drops or your IP changes. Open source, sends nothing without your consent.",
     based_on: "Based on Kordon © Efimov Dev", github: "Perimeter on GitHub", license: "GPL-3.0 license",
     history_empty: "Nothing has happened yet", g_log: "Log",
     es_hist: "Freezes, VPN comebacks and closed apps will show up here.",
@@ -223,6 +225,30 @@ function heroActions() {
   return a;
 }
 
+// The update banner follows the install: available -> downloading (with
+// progress) -> restarting. The click switches it at once, before the server's
+// next state, so it never looks like nothing happened.
+let updating = 0; // when "Update" was clicked, 0 if not
+let sawInstalling = false;
+function updateBanner() {
+  const u = S.updateInfo || {};
+  if (u.installing) sawInstalling = true;
+  // the install ended without a restart (it failed) or never started: back to the button
+  if (updating && !u.installing && (sawInstalling || Date.now() - updating > 8000)) updating = 0, sawInstalling = false;
+  if (!S.update && !u.installing && !updating) return "";
+  const ver = esc(u.version || S.update || "");
+  if (u.installing || updating) {
+    const pct = u.total ? Math.min(100, (u.done / u.total) * 100) : 0;
+    const restarting = u.total && u.done >= u.total;
+    const size = u.total && !restarting ? `${(u.done / 1048576).toFixed(1)} ${t("upd_of")} ${(u.total / 1048576).toFixed(1)} ${t("upd_mb")}` : "";
+    const fill = restarting ? 100 : u.total ? pct : 4; // the tint grows with the download
+    return `<div class="banner upd-run" style="--p:${fill.toFixed(1)}%"><div class="grow"><div class="upd-h"><b>${restarting ? t("upd_restart") : `${t("upd_installing")} ${ver}`}</b><span class="muted">${size}</span></div>
+      <div class="ubar ${u.total && !restarting ? "" : "unknown"}"><i style="${u.total && !restarting ? `width:${pct}%` : ""}"></i></div>
+      <div class="muted upd-note">${t("upd_note")}</div></div></div>`;
+  }
+  return `<div class="banner"><b>${t("update_avail")} ${ver}</b><span class="grow"></span><button class="btn primary" data-op="install_update">${t("update_btn")}</button></div>`;
+}
+
 function heroTitle() {
   if (S.paused) return S.pausedUntil === "forever" ? t("paused_forever") : `${t("paused_until")} ${esc(S.pausedUntil)}`;
   return t("h_" + S.status);
@@ -245,7 +271,7 @@ function overview() {
   const icon = { ok: "check", frozen: "snow", starting: "snow", blocked: "stop", paused: "pause" }[S.status];
   const grace = S.settings.grace || 1;
   const bar = S.status === "frozen" && S.reason !== "net" && S.settings.close_apps ? `<div class="bar" style="width:${Math.max(0, (S.graceLeft / grace) * 100)}%"></div>` : "";
-  const upd = S.update ? `<div class="banner"><b>${t("update_avail")} ${esc(S.update)}</b><span class="grow"></span><button class="btn primary" data-op="install_update">${t("update_btn")}</button></div>` : "";
+  const upd = updateBanner();
   const ipV = S.offline ? t("offline") : S.ip ? esc(S.ip) : t("checking");
   const others = S.others && S.others.length ? `<div class="s">${t("others")}: ${S.others.map(esc).join(", ")}</div>` : "";
   const dnsTile = S.dns
@@ -536,7 +562,8 @@ function render() {
 async function refresh(force = false) {
   try {
     const r = await fetch("/api/state");
-    if (!r.ok) return;
+    if (!r.ok) return lost();
+    failures = 0;
     const txt = await r.text();
     if (!force && txt === lastJSON) return;
     lastJSON = txt;
@@ -544,7 +571,14 @@ async function refresh(force = false) {
     const a = document.activeElement;
     if (!force && a && a.closest("main") && (a.tagName === "INPUT" || a.tagName === "SELECT")) return;
     render();
-  } catch (_) { /* Perimeter restarting: try again on the next tick */ }
+  } catch (_) { lost(); /* Perimeter restarting: try again on the next tick */ }
+}
+
+// After a restart Perimeter listens on a new port with a new key: after a few
+// failed ticks the panel asks its window to load the new address.
+let failures = 0;
+function lost() {
+  if (++failures >= 3) window.perimeterReconnect?.(page);
 }
 
 // ---------- events ----------
@@ -557,6 +591,7 @@ function countryCode(v) {
 }
 
 document.addEventListener("click", async (e) => {
+  if (e.target.closest('[data-op="install_update"]')) { updating = Date.now(); render(); }
   const el = e.target.closest("[data-op],[data-url],[data-go],[data-rule],[data-addcbtn],[data-addipbtn],[data-rename],#cAdd,#trustBtn");
   if (!el) return;
   e.preventDefault();
