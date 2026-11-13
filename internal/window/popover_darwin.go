@@ -22,6 +22,7 @@ static const CGFloat popWidth = 340;
 @property (strong) WKWebView *web;
 @property (assign) CFTimeInterval hiddenAt;
 @property (assign) CGFloat height;
+@property (assign) BOOL opening; // waiting for the page to draw fresh data
 @end
 
 @implementation PerimeterPop
@@ -82,16 +83,39 @@ static const CGFloat popWidth = 340;
 	[self.panel setFrame:NSMakeRect(x, top - h, popWidth, h) display:YES];
 }
 
+// The page first redraws with fresh data (perimeterShow resolves after that),
+// then the window appears with a short fade, like the system's own popovers.
+// Showing it first and refreshing after made it blink: the old content, the
+// page's entrance animation, then the new content. If the page doesn't answer
+// in 0.3 s (Perimeter restarting), the window opens anyway.
 - (void)show {
+	if (self.opening || self.panel.visible) return;
+	self.opening = YES;
+	__weak PerimeterPop *me = self;
+	[self.web callAsyncJavaScript:@"if (window.perimeterShow) await perimeterShow();" arguments:@{} inFrame:nil
+		inContentWorld:WKContentWorld.pageWorld completionHandler:^(id r, NSError *e) { [me reveal]; }];
+	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ [me reveal]; });
+}
+
+- (void)reveal {
+	if (!self.opening) return; // already shown by the other path
+	self.opening = NO;
 	[self place];
+	self.panel.alphaValue = 0;
 	// Take the focus like the system's own menu bar popovers do: Escape works,
 	// and a click anywhere else takes it away, which closes the window.
 	[NSApp activateIgnoringOtherApps:YES];
 	[self.panel makeKeyAndOrderFront:nil];
-	[self.web evaluateJavaScript:@"window.perimeterShow && perimeterShow()" completionHandler:nil];
+	// Becoming key focuses the page's first button; a mouse click shouldn't show a focus ring.
+	[self.web evaluateJavaScript:@"document.activeElement && document.activeElement.blur()" completionHandler:nil];
+	[NSAnimationContext runAnimationGroup:^(NSAnimationContext *c) {
+		c.duration = 0.12;
+		self.panel.animator.alphaValue = 1;
+	} completionHandler:nil];
 }
 
 - (void)hide {
+	self.opening = NO;
 	if (!self.panel.visible) return;
 	[self.panel orderOut:nil];
 	self.hiddenAt = CACurrentMediaTime();
@@ -100,7 +124,7 @@ static const CGFloat popWidth = 340;
 }
 
 - (void)toggle {
-	if (self.panel.visible) { [self hide]; return; }
+	if (self.panel.visible || self.opening) { [self hide]; return; }
 	// A click on the icon first takes the focus away (which hides the window)
 	// and only then arrives here: that click means "close", not "open again".
 	if (CACurrentMediaTime() - self.hiddenAt < 0.35) return;
@@ -114,6 +138,16 @@ static const CGFloat popWidth = 340;
 	NSString *op = msg.body[@"op"];
 	if ([op isEqualToString:@"hide"]) {
 		[self hide];
+	} else if ([op isEqualToString:@"handoff"]) {
+		// The panel is opening: close without handing the focus back to the
+		// previous app, and let the panel process (same app) take it.
+		self.opening = NO;
+		[self.panel orderOut:nil];
+		self.hiddenAt = CACurrentMediaTime();
+		[self.web evaluateJavaScript:@"window.perimeterHide && perimeterHide()" completionHandler:nil];
+		if (@available(macOS 14.0, *)) {
+			[NSApp yieldActivationToApplicationWithBundleIdentifier:NSBundle.mainBundle.bundleIdentifier ?: @""];
+		}
 	} else if ([op isEqualToString:@"resize"]) {
 		CGFloat h = [msg.body[@"height"] doubleValue];
 		if (h < 120 || h > 1100 || fabs(h - self.height) < 1) return;

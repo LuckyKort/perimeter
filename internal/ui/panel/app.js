@@ -152,6 +152,9 @@ const ICONS = {
 const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+// Mac layout from the first paint, not after the data arrives (it moved the name and the content).
+if (navigator.userAgent.includes("Mac")) document.documentElement.classList.add("mac");
+
 const PAGES = ["overview", "apps", "allow", "networks", "leaks", "stats", "history", "settings", "about"];
 // Sidebar: two labelled groups, settings and about pinned to the bottom.
 const NAV = [["g_protect", ["overview", "apps", "allow", "networks", "leaks"]], ["g_log", ["stats", "history"]], ["", ["settings", "about"]]];
@@ -621,6 +624,9 @@ window.addEventListener("hashchange", () => { page = location.hash.slice(1); ope
 
 (async () => {
   await refresh(true);
+  // The native window stays invisible until the real content is in the page. Not
+  // requestAnimationFrame: WebKit doesn't draw frames for an invisible window.
+  window.perimeterReady?.();
   countries = await fetch("/api/countries").then((r) => r.json()).catch(() => []);
   if (page === "allow" || page === "apps") render();
   setInterval(refresh, 1000);

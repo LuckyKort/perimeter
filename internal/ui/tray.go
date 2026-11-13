@@ -605,12 +605,36 @@ func HeadlessRender(s guard.Snapshot, evs []guard.Event) {
 }
 
 // OpenPanel starts `perimeter panel`, which shows the panel window, on a page ("" - the overview).
+var (
+	panelMu   sync.Mutex
+	panelProc *os.Process // the open panel window's process, nil when none
+)
+
+// OpenPanel shows the panel on a page ("" keeps the current one). A panel that
+// is already open comes to the front instead of a second window opening.
 func OpenPanel(page string) {
+	yieldActivation()
+	panelMu.Lock()
+	defer panelMu.Unlock()
+	if panelProc != nil && focusPanel(panelProc, page) {
+		return
+	}
 	exe, err := os.Executable()
 	if err != nil {
 		return
 	}
 	cmd := exec.Command(exe, "panel", page)
 	cmd.Env = append(os.Environ(), "PERIMETER_CHILD=1") // the panel needs no supervisor
-	_ = cmd.Start()
+	if cmd.Start() != nil {
+		return
+	}
+	panelProc = cmd.Process
+	go func(p *os.Process) {
+		_, _ = p.Wait()
+		panelMu.Lock()
+		if panelProc == p {
+			panelProc = nil
+		}
+		panelMu.Unlock()
+	}(cmd.Process)
 }

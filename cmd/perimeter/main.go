@@ -314,7 +314,8 @@ func openPanel(page string) error {
 	if page != "" && !strings.ContainsAny(page, "?#&/") {
 		url += "#" + page
 	}
-	if err := window.Open(url, "Perimeter", ui.T("panel.close"), ui.T("panel.quit")); err != nil {
+	nextPage := func() string { b, _ := os.ReadFile(ui.PanelPagePath()); return strings.TrimSpace(string(b)) }
+	if err := window.Open(url, "Perimeter", ui.T("panel.close"), ui.T("panel.quit"), nextPage); err != nil {
 		return app.OpenURL(url)
 	}
 	return nil

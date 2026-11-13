@@ -61,7 +61,7 @@ const br = (s) => esc(s).replace(/\n/g, "<br>");
 let S = null;
 let lastHTML = "";
 let pauseOpen = false, notesOpen = false, hiddenUpdate = "";
-let timer = null, inTimer = null;
+let timer = null;
 
 // Native bridge: WKWebView message handler on macOS, bound functions on Windows.
 function native(msg) {
@@ -258,8 +258,9 @@ document.addEventListener("click", async (e) => {
     return;
   }
   if (b.dataset.panel) {
+    // Hand the focus to the panel (macOS 14+ only lets it come forward if we yield), then ask for it.
+    native({ op: "handoff" });
     await api("open_panel", { value: b.dataset.panel });
-    native({ op: "hide" });
     return;
   }
   if (b.dataset.op) {
@@ -291,17 +292,14 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") native({ op: "hide" });
 });
 
-window.perimeterShow = () => {
+// Called before the window appears: it resolves once the page shows fresh data,
+// so the window never opens on the state left from the last time. The window
+// itself fades in natively; the page doesn't animate on its own.
+window.perimeterShow = async () => {
   pauseOpen = false;
-  const pop = document.getElementById("pop");
-  // The entrance animation plays once per opening, not on every refresh.
-  pop.classList.remove("in");
-  void pop.offsetWidth;
-  pop.classList.add("in");
-  clearTimeout(inTimer);
-  inTimer = setTimeout(() => pop.classList.remove("in"), 600);
-  refresh();
+  document.activeElement?.blur(); // opened by a click: no focus ring on the first button
   clearInterval(timer);
+  await refresh();
   timer = setInterval(refresh, 1000);
 };
 window.perimeterHide = () => {

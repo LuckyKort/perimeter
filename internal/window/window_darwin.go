@@ -32,7 +32,46 @@ static void perimeter_setup_app(const char *closeTitle, const char *quitTitle) {
 	[bar addItem:editItem];
 
 	[NSApp setMainMenu:bar];
-	[NSApp activateIgnoringOtherApps:YES];
+}
+
+// Take the focus. Since macOS 14 the old activateIgnoringOtherApps is ignored
+// for an app in the background; activate works because the app that was
+// active (the tray window, the menu bar icon) yielded it to us.
+static void perimeter_activate(void) {
+	if (@available(macOS 14.0, *)) {
+		[NSApp activate];
+	} else {
+		[NSApp activateIgnoringOtherApps:YES];
+	}
+}
+
+// The window appears once the page has drawn its first frame with data (or
+// after a timeout): a short fade instead of a blank page, then the unstyled
+// one, then the real content.
+static void perimeter_reveal(void *ptr) {
+	NSWindow *w = (__bridge NSWindow *)ptr;
+	perimeter_activate();
+	[w makeKeyAndOrderFront:nil];
+	if (w.alphaValue >= 1) return;
+	[NSAnimationContext runAnimationGroup:^(NSAnimationContext *c) {
+		c.duration = 0.15;
+		w.animator.alphaValue = 1;
+	} completionHandler:nil];
+}
+
+// Brings the open panel back: from the Dock, from behind other windows.
+static void perimeter_focus(void *ptr) {
+	NSWindow *w = (__bridge NSWindow *)ptr;
+	if (w.miniaturized) [w deminiaturize:nil];
+	perimeter_activate();
+	[w makeKeyAndOrderFront:nil];
+}
+
+// The web view sits on the page's own background colour, not white, so no
+// flash shows before the page paints.
+static void perimeter_quiet_background(NSView *v) {
+	if ([v isKindOfClass:NSClassFromString(@"WKWebView")]) [v setValue:@NO forKey:@"drawsBackground"];
+	for (NSView *s in v.subviews) perimeter_quiet_background(s);
 }
 
 // A transparent strip over the top of the page that moves the window: over a
@@ -93,6 +132,14 @@ static void perimeter_frameless(void *ptr) {
 	w.toolbarStyle = NSWindowToolbarStyleUnified;
 	w.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
 	w.minSize = NSMakeSize(760, 520);
+	// Practically invisible until perimeter_reveal, but not 0: macOS counts an
+	// alpha-0 window as hidden, and WebKit then neither loads nor draws the page.
+	w.alphaValue = 0.004;
+	w.backgroundColor = [NSColor colorWithName:nil dynamicProvider:^NSColor *(NSAppearance *a) {
+		BOOL dark = [a bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]] == NSAppearanceNameDarkAqua;
+		return dark ? [NSColor colorWithWhite:0x14 / 255.0 alpha:1] : [NSColor colorWithWhite:0xF4 / 255.0 alpha:1]; // --bg in app.css
+	}];
+	perimeter_quiet_background(w.contentView);
 
 	// The page keeps this strip free of controls (see html.mac in app.css).
 	NSView *content = w.contentView;
@@ -109,6 +156,12 @@ import "C"
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
 	"unsafe"
 
 	webview "github.com/webview/webview_go"
@@ -117,8 +170,10 @@ import (
 // windowRadius: the corner radius of macOS 26+ windows with a sidebar.
 const windowRadius = 26
 
-// Open shows the panel and blocks until the window is closed.
-func Open(url, title, closeTitle, quitTitle string) error {
+// Open shows the panel and blocks until the window is closed. nextPage tells
+// which page to switch to when Perimeter asks this panel to come forward
+// (SIGUSR1) instead of opening a second one.
+func Open(url, title, closeTitle, quitTitle string, nextPage func() string) error {
 	r := float64(C.perimeter_modern_corners(windowRadius)) // before the window is created
 	w := webview.New(false)
 	defer w.Destroy()
@@ -136,6 +191,31 @@ func Open(url, title, closeTitle, quitTitle string) error {
 		C.perimeter_setup_app(ct, qt)
 		C.perimeter_frameless(win)
 	})
+
+	// Shown when the page has drawn real content, at the latest after 2.5 s.
+	var once sync.Once
+	reveal := func() { once.Do(func() { w.Dispatch(func() { C.perimeter_reveal(win) }) }) }
+	_ = w.Bind("perimeterReady", reveal)
+	// ~0.8 s normally; the first start of a new build is slower (macOS checks it).
+	fallback := time.AfterFunc(2500*time.Millisecond, reveal)
+	defer fallback.Stop()
+
+	// Perimeter asks this window to come forward, maybe on another page.
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGUSR1)
+	defer signal.Stop(sig)
+	go func() {
+		for range sig {
+			page := nextPage()
+			w.Dispatch(func() {
+				C.perimeter_focus(win)
+				if page != "" && !strings.ContainsAny(page, "?#&/\\\"'<>") {
+					w.Eval("location.hash = '#" + page + "'")
+				}
+			})
+		}
+	}()
+
 	w.Navigate(url)
 	w.Run()
 	return nil
