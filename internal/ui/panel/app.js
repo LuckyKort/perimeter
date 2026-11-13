@@ -146,6 +146,7 @@ const ICONS = {
   pause: '<path d="M9 5v14M15 5v14"/>',
   chev: '<path d="M7 10l5 5 5-5"/>',
   globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
+  recheck: '<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/>',
   pin: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12h8M12 8v8"/>',
 };
 const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
@@ -201,14 +202,22 @@ function fmtDur(sec) {
 
 function heroActions() {
   const a = [];
-  if (S.paused) return `<button class="btn primary" data-op="unpause">${t("unpause")}</button>`;
-  if (S.ip && !S.allowedNow && (S.reason === "ip" || S.reason === "v6")) {
+  if (S.paused) return [`<button class="btn primary" data-op="unpause">${t("unpause")}</button>`];
+  // Way out of a wrong IP first; then "check" shrinks to an icon (the IP is checked
+  // all the time anyway) and the country to its flag, so the row stays one line.
+  const fix = S.ip && !S.allowedNow && (S.reason === "ip" || S.reason === "v6");
+  if (fix) {
     a.push(`<button class="btn primary" data-op="allow_current_ip">${t("allow_ip")}</button>`);
-    if (S.country) a.push(`<button class="btn" data-op="allow_current_country">${t("allow_country")}: ${country(S.country)}</button>`);
+    if (S.country) {
+      const c = S.goos === "windows" ? esc(S.country.code) : `<span class="flag">${esc(S.country.flag)}</span>`;
+      a.push(`<button class="btn" data-op="allow_current_country" title="${t("allow_country")}: ${esc(S.country.name)}">${t("allow_country")} ${c}</button>`);
+    }
   }
-  a.push(`<button class="btn" data-op="check_now">${t("check")}</button>`);
+  a.push(fix
+    ? `<button class="btn icon" data-op="check_now" title="${t("check")}" aria-label="${t("check")}">${svg("recheck")}</button>`
+    : `<button class="btn" data-op="check_now">${t("check")}</button>`);
   a.push(`<select class="btn" id="pauseSel"><option value="">${t("pause")}…</option><option value="15">${t("pause15")}</option><option value="60">${t("pause60")}</option><option value="0">${t("pauseF")}</option></select>`);
-  return a.join("");
+  return a;
 }
 
 function heroTitle() {
@@ -221,7 +230,7 @@ function heroTitle() {
 function heroSub() {
   const lines = [];
   if (!S.paused && (S.status === "frozen" || S.status === "blocked") && S.reasonText) {
-    lines.push(esc(S.reasonText) + (S.status === "frozen" && S.reason !== "net" && S.settings.close_apps ? ` · ${t("close_in")} ${S.graceLeft} ${t("sec")}` : ""));
+    lines.push(esc(S.reasonText) + (S.status === "frozen" && S.reason !== "net" && S.settings.close_apps ? ` · ${t("close_in")} ${S.graceLeft}&nbsp;${t("sec")}` : ""));
   }
   const run = S.apps.filter((a) => a.running);
   if (!run.length) lines.push(t("no_apps"));
@@ -242,11 +251,13 @@ function overview() {
   const netTile = S.network
     ? `<div class="card tile"><div class="k">${t("network")}</div><div class="v">${esc(S.network)}</div><div class="s">${t("trusted_net")}</div></div>`
     : `<div class="card tile"><div class="k">${t("network")}</div><div class="v">${S.netId ? t("usual_net") : t("unknown_net")}</div>${S.netId ? `<div class="s selectable">${t("router")} ${esc(S.netId)}</div><div class="row"><button class="btn small" data-go="networks">${t("trust")}…</button></div>` : ""}</div>`;
+  const acts = heroActions();
+  // Up to two actions sit at the end of the row; more go under the text.
   return `${upd}
-  <div class="card hero ${S.status}">
+  <div class="card hero ${S.status} ${acts.length > 2 ? "stack" : ""}">
     <div class="orb">${svg(icon)}</div>
     <div class="hero-text"><div class="title">${heroTitle()}</div><div class="sub">${heroSub()}</div></div>
-    <div class="actions">${heroActions()}</div>${bar}
+    <div class="actions">${acts.join("")}</div>${bar}
   </div>
   <div class="grid">
     <div class="card tile"><div class="k">${t("ip")}</div><div class="v selectable">${ipV}</div><div class="s">${country(S.country)}</div>${others}</div>

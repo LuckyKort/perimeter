@@ -3,10 +3,10 @@
    (NSVisualEffectView), so the page stays translucent on top of it.
    System type: SF Pro for text, SF Pro Rounded with tabular figures for
    numbers. Colour means state only: green - fine, orange - frozen,
-   red - closed, gray - paused. Neutral greys, a graphite accent. */
+   red - closed, gray - paused. Neutral greys; the accent is the app icon's blue. */
 
 :root {
-  --accent: #6E6E6E; --ok: #34C759; --warn: #FF9500; --bad: #FF3B30; --gray: #8E8E8E;
+  --accent: #2372F2; --accent-fill: linear-gradient(180deg, #2F80FF, #1764E6); --ok: #34C759; --warn: #FF9500; --bad: #FF3B30; --gray: #8E8E8E;
   --text: #1C1C1C; --muted: rgba(28, 28, 28, .56); --faint: rgba(28, 28, 28, .32);
   --fill: rgba(128, 128, 128, .10); --fill-h: rgba(128, 128, 128, .17);
   --card: rgba(255, 255, 255, .62); --hair: rgba(0, 0, 0, .07); --hi: rgba(255, 255, 255, .9);
@@ -18,7 +18,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --accent: #5C5C5C; --ok: #30D158; --warn: #FF9F0A; --bad: #FF453A; --gray: #989898;
+    --accent: #2F80FF; --accent-fill: linear-gradient(180deg, #3A88FF, #1E6CEB); --ok: #30D158; --warn: #FF9F0A; --bad: #FF453A; --gray: #989898;
     --text: #F2F2F2; --muted: rgba(235, 235, 235, .58); --faint: rgba(235, 235, 235, .3);
     --fill: rgba(128, 128, 128, .2); --fill-h: rgba(128, 128, 128, .3);
     --card: rgba(44, 44, 44, .55); --hair: rgba(255, 255, 255, .07); --hi: rgba(255, 255, 255, .08);
@@ -126,7 +126,7 @@ html.win .pop { background: none; }
 .act:active { transform: scale(.97); transition-duration: .1s; }
 .act i { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 6px; background: var(--fill); }
 .act svg { width: 15px; height: 15px; display: block; }
-.act.on i { background: var(--accent); color: #fff; }
+.act.on i { background: var(--accent-fill); color: #fff; }
 .chips { display: flex; gap: 4px; margin-top: 8px; padding: 3px; border-radius: 12px; background: var(--fill); animation: rise .3s var(--spring) both; }
 .chips button { flex: 1; height: 28px; border-radius: 9px; font-size: 12px; font-weight: 600; transition: background .2s; }
 .chips button:hover { background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
@@ -139,8 +139,8 @@ html.win .pop { background: none; }
 .btn:active { transform: scale(.98); transition-duration: .1s; }
 .btn svg { width: 14px; height: 14px; }
 .btn small { font-weight: 400; color: var(--muted); }
-.btn.pri { background: var(--accent); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
-.btn.pri:hover { background: var(--accent); filter: brightness(1.08); }
+.btn.pri { background: var(--accent-fill); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+.btn.pri:hover { background: var(--accent-fill); filter: brightness(1.08); }
 
 /* update / what's new / first run */
 .upd { border-radius: 18px; padding: 14px 14px 12px; margin-bottom: 10px;

@@ -4,6 +4,7 @@ package window
 #cgo CFLAGS: -x objective-c
 #cgo LDFLAGS: -framework Cocoa
 #import <Cocoa/Cocoa.h>
+#import <objc/runtime.h>
 
 // A regular app while the panel is open: Dock icon, ⌘Tab, and an Edit menu,
 // without which ⌘C / ⌘V / ⌘A don't work in the page's text fields.
@@ -50,6 +51,34 @@ static void perimeter_setup_app(const char *closeTitle, const char *quitTitle) {
 }
 @end
 
+// Modern window corners. On macOS 26+ apps with a sidebar (Finder, Telegram)
+// have 26 pt corners, while AppKit gives this window the generic 16 pt. The
+// window frame (NSThemeFrame) asks itself for the radius it draws, masks and
+// shadows with; for ordinary windows of this process - the panel - it answers
+// `radius`. [window class] also matches the KVO subclass AppKit swaps in for a
+// window with a toolbar. Installed before the window exists, so the frame
+// never caches the old value. Returns the radius in effect, 0 if untouched.
+static double perimeter_modern_corners(double radius) {
+	if (![[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){26, 0, 0}]) return 0;
+	Class frame = NSClassFromString(@"NSThemeFrame");
+	if (!frame) return 0;
+	BOOL done = NO;
+	for (NSString *name in @[@"_cornerRadius", @"_getCachedDefaultWindowCornerRadius", @"cornerRadius"]) {
+		SEL sel = NSSelectorFromString(name);
+		Method m = class_getInstanceMethod(frame, sel);
+		if (!m || strcmp(method_getTypeEncoding(m), "d16@0:8") != 0) continue; // not the getter we know
+		IMP orig = method_getImplementation(m);
+		IMP mine = imp_implementationWithBlock(^double(NSView *view) {
+			if ([view.window class] == [NSWindow class]) return radius;
+			return ((double (*)(id, SEL))orig)(view, sel);
+		});
+		// on NSThemeFrame itself, so other views keep NSView's cornerRadius
+		if (!class_addMethod(frame, sel, mine, method_getTypeEncoding(m))) method_setImplementation(m, mine);
+		done = YES;
+	}
+	return done ? radius : 0;
+}
+
 // No title bar: the page fills the window, like Telegram. The traffic lights
 // stay, and an empty unified toolbar makes the top strip taller, so they sit
 // lower, inside the page's floating sidebar. The strip is still the window's
@@ -79,13 +108,18 @@ static void perimeter_frameless(void *ptr) {
 import "C"
 
 import (
+	"fmt"
 	"unsafe"
 
 	webview "github.com/webview/webview_go"
 )
 
+// windowRadius: the corner radius of macOS 26+ windows with a sidebar.
+const windowRadius = 26
+
 // Open shows the panel and blocks until the window is closed.
 func Open(url, title, closeTitle, quitTitle string) error {
+	r := float64(C.perimeter_modern_corners(windowRadius)) // before the window is created
 	w := webview.New(false)
 	defer w.Destroy()
 	w.SetTitle(title)
@@ -94,6 +128,10 @@ func Open(url, title, closeTitle, quitTitle string) error {
 	defer C.free(unsafe.Pointer(ct))
 	defer C.free(unsafe.Pointer(qt))
 	win := w.Window()
+	// Inner shapes are concentric with the window (radius = window radius - inset).
+	if r > 0 {
+		w.Init(fmt.Sprintf("document.documentElement.style.setProperty('--win-r','%gpx')", r))
+	}
 	w.Dispatch(func() {
 		C.perimeter_setup_app(ct, qt)
 		C.perimeter_frameless(win)
