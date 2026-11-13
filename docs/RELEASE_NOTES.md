@@ -1,5 +1,17 @@
 **Установка**
 
+macOS и Linux:
+```bash
+curl -fsSL https://raw.githubusercontent.com/LuckyKort/perimeter/main/scripts/install.sh | sh
+```
+
+Windows (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/LuckyKort/perimeter/main/scripts/install.ps1 | iex
+```
+
+Или скачайте файл вручную:
+
 | Файл | Для чего |
 |---|---|
 | `Perimeter-macos.zip` | macOS 11+, Apple Silicon и Intel |
