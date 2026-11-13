@@ -16,6 +16,7 @@ func TestBundleFromRunningProcess(t *testing.T) {
 func TestBundleByName(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home) // os.UserHomeDir on Windows
 	if err := os.MkdirAll(filepath.Join(home, "Applications", "Fake Perimeter Test.app"), 0o755); err != nil {
 		t.Fatal(err)
 	}
