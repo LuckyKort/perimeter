@@ -7,7 +7,7 @@ const L = {
   ru: {
     ob_t: "Привет! Настроим за минуту", ob_ip: "Я разрешил текущий адрес:", ob_q: "Это адрес VPN?", ob_yes: "Да, это VPN", ob_no: "Нет",
     ob_off: "Тогда включи VPN: как только появится его адрес, нажми «Разрешить этот IP» ниже. До этого программы на паузе.",
-    ob_country: "Разрешить всю страну", ob_apps: "Ещё запущено - защищать?", ob_done: "Готово",
+    ob_country: "Разрешить всю страну", ob_apps: "Ещё запущено — защищать?", ob_done: "Готово",
     h_ok: "Защита включена", h_frozen: "Приложения на паузе", h_blocked: "Приложения закрыты", h_starting: "Проверяю IP…",
     h_paused: "Защита на паузе", paused_until: "до", paused_forever: "до перезапуска",
     allowed: "разрешено", not_allowed: "не разрешено", offline: "Нет интернета", checking: "Проверяю…",
@@ -26,7 +26,7 @@ const L = {
   en: {
     ob_t: "Hi! A one-minute setup", ob_ip: "I've allowed the current address:", ob_q: "Is this your VPN's address?", ob_yes: "Yes, the VPN", ob_no: "No",
     ob_off: "Then turn the VPN on: once its address shows up, press \"Allow this IP\" below. Until then the apps stay paused.",
-    ob_country: "Allow the whole country", ob_apps: "Also running - protect them?", ob_done: "Done",
+    ob_country: "Allow the whole country", ob_apps: "Also running — protect them?", ob_done: "Done",
     h_ok: "Protection is on", h_frozen: "Apps are paused", h_blocked: "Apps are closed", h_starting: "Checking IP…",
     h_paused: "Protection paused", paused_until: "until", paused_forever: "until restart",
     allowed: "allowed", not_allowed: "not allowed", offline: "No internet", checking: "Checking…",
@@ -79,7 +79,7 @@ async function api(op, data = {}) {
 
 function country(c) {
   if (!c) return "";
-  return S.goos === "windows" ? `${esc(c.code)} · ${esc(c.name)}` : `${esc(c.flag)} ${esc(c.name)}`;
+  return S.goos === "windows" ? `${esc(c.code)} · ${esc(c.name)}` : `<span class="flag">${esc(c.flag)}</span>${esc(c.name)}`;
 }
 
 // A steady colour per app name: a small app-icon-like tile with the initial.
@@ -149,7 +149,7 @@ function hero() {
   const st = S.status;
   let title = t("h_" + st);
   if (S.paused) title += " " + (S.pausedUntil === "forever" ? t("paused_forever") : `${t("paused_until")} ${esc(S.pausedUntil)}`);
-  const countdown = st === "frozen" && S.reason !== "net" && !S.paused;
+  const countdown = st === "frozen" && S.reason !== "net" && !S.paused && S.settings.close_apps;
   const grace = S.settings.grace || 20;
   const ring = countdown
     ? `<div class="ring"><svg viewBox="0 0 58 58"><circle class="bg" cx="29" cy="29" r="26"/><circle class="fg" cx="29" cy="29" r="26" style="stroke-dashoffset:${(163.4 * (1 - Math.max(0, S.graceLeft) / grace)).toFixed(1)}"/></svg><span>${S.graceLeft}<small>${t("sec")}</small></span></div>`

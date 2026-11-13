@@ -14,7 +14,7 @@ var CommentLang = "ru"
 type tpl struct {
 	rules, trusted, dns string
 	header, apps, appsList, custom, allow, ips, countries,
-	freeze, offline, grace, closeT, interval, services, agree, ipv6, services6, menubar, update, lang, notify string
+	freeze, offline, closeApps, grace, closeT, interval, services, agree, ipv6, services6, menubar, update, lang, notify string
 }
 
 var templates = map[string]tpl{
@@ -37,6 +37,7 @@ var templates = map[string]tpl{
 		freeze: "# Сменилась сеть (VPN, Wi-Fi) - заморозить приложения, пока не проверим IP.\n" +
 			"# Обычно это доля секунды, и если IP прежний, приложение даже не заметит.",
 		offline:   "# Пропал интернет - тоже заморозить.",
+		closeApps: "# Закрывать приложения, если разрешённый IP не вернулся за grace. false - только\n# замораживать: приложения ждут сколько угодно и продолжают с того же места.",
 		grace:     "# Сколько держать приложения замороженными, ожидая разрешённый IP. Потом - закрыть.",
 		closeT:    "# Сколько ждать, пока приложение закроется само, прежде чем завершить принудительно.",
 		interval:  "# Как часто сверять внешний IP, когда всё в порядке (не меньше 3s).",
@@ -67,6 +68,7 @@ var templates = map[string]tpl{
 		freeze: "# Network changed (VPN, Wi-Fi) - freeze the apps until the IP is checked.\n" +
 			"# Usually a fraction of a second; if the IP is the same, the app won't notice.",
 		offline:   "# Internet is gone - freeze too.",
+		closeApps: "# Close the apps if an allowed IP isn't back within grace. false - only freeze:\n# the apps wait as long as it takes and carry on where they left off.",
 		grace:     "# How long to keep apps frozen waiting for an allowed IP before closing them.",
 		closeT:    "# How long to wait for an app to quit on its own before force-closing it.",
 		interval:  "# How often to re-check the public IP while everything is fine (3s minimum).",
@@ -160,6 +162,7 @@ func Render(c *Config) string {
 	b.WriteString("\n\n")
 	fmt.Fprintf(&b, "%s\nfreeze_on_network_change: %t\n\n", t.freeze, c.FreezeOnNetworkChange)
 	fmt.Fprintf(&b, "%s\nblock_when_offline: %t\n\n", t.offline, c.BlockWhenOffline)
+	fmt.Fprintf(&b, "%s\nclose_apps: %t\n\n", t.closeApps, c.CloseApps)
 	fmt.Fprintf(&b, "%s\ngrace: %s\n\n", t.grace, c.Grace)
 	fmt.Fprintf(&b, "%s\nclose_timeout: %s\n\n", t.closeT, c.CloseTimeout)
 	fmt.Fprintf(&b, "%s\ncheck_interval: %s\n\n", t.interval, c.CheckInterval)

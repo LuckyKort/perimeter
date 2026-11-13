@@ -538,7 +538,7 @@ func barText(s guard.Snapshot) string {
 	} else {
 		b.WriteString(s.IP)
 	}
-	if s.Status == guard.Suspect && s.Reason != guard.NetChanged && !s.Paused() {
+	if s.Status == guard.Suspect && s.Reason != guard.NetChanged && !s.Paused() && s.Config.CloseApps {
 		b.WriteString(" · " + Dur(s.GraceLeft))
 	}
 	return b.String()
@@ -554,7 +554,7 @@ func (t *Tray) setIcon(s guard.Snapshot) {
 	if runtime.GOOS == "darwin" {
 		// The fence's dashes go out one by one while apps wait for the right IP.
 		lit := 8
-		if s.Status == guard.Suspect && s.Reason != guard.NetChanged && !s.Paused() {
+		if s.Status == guard.Suspect && s.Reason != guard.NetChanged && !s.Paused() && s.Config.CloseApps {
 			lit = BarLit(s.GraceLeft, s.Config.Grace.D())
 		}
 		if key = fmt.Sprint(tone, lit); key != t.lastIcon {

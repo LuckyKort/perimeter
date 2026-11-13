@@ -85,6 +85,8 @@ var msgs = map[string]map[string]string{
 		"ev.online":         "Интернет вернулся: %s",
 		"ev.frozen":         "Заморожено (%s): %s",
 		"ev.frozen.t":       "%s: заморожено",
+		"ev.frozen.hold.b":  "%s. Приложения на паузе и продолжат с того же места, когда вернётся разрешённый IP.",
+		"frozen.hold":       "%s: заморожено, жду разрешённый IP",
 		"ev.frozen.ip.b":    "IP %s не разрешён. Если разрешённый не вернётся за %s, закрою.",
 		"ev.frozen.off.b":   "Пропал интернет. Если не вернётся за %s, закрою.",
 		"ev.resumed":        "Разморожено: %s",
@@ -138,7 +140,7 @@ var msgs = map[string]map[string]string{
 		"crash.t":           "Perimeter остановился",
 		"crash.b":           "Он упал несколько раз подряд. Подробности в журнале: %s. Запустите Perimeter заново и напишите нам в GitHub Issues.",
 		"already.t":         "Perimeter уже запущен",
-		"already.b":         "Значок в строке меню (на Windows - у часов, может прятаться под стрелкой ^).",
+		"already.b":         "Значок в строке меню (на Windows — у часов, может прятаться под стрелкой ^).",
 	},
 	"en": {
 		"starting":            "Checking IP…",
@@ -208,6 +210,8 @@ var msgs = map[string]map[string]string{
 		"ev.online":         "Internet is back: %s",
 		"ev.frozen":         "Frozen (%s): %s",
 		"ev.frozen.t":       "%s: frozen",
+		"ev.frozen.hold.b":  "%s. The apps are paused and will carry on where they left off once an allowed IP is back.",
+		"frozen.hold":       "%s: frozen, waiting for an allowed IP",
 		"ev.frozen.ip.b":    "IP %s is not allowed. If an allowed one isn't back within %s, I'll close it.",
 		"ev.frozen.off.b":   "No internet. If it isn't back within %s, I'll close it.",
 		"ev.resumed":        "Resumed: %s",
@@ -261,7 +265,7 @@ var msgs = map[string]map[string]string{
 		"crash.t":           "Perimeter stopped",
 		"crash.b":           "It crashed several times in a row. Details in the log: %s. Start Perimeter again and please report it on GitHub Issues.",
 		"already.t":         "Perimeter is already running",
-		"already.b":         "Look for the icon in the menu bar (on Windows - by the clock, maybe under the ^ arrow).",
+		"already.b":         "Look for the icon in the menu bar (on Windows — by the clock, maybe under the ^ arrow).",
 	},
 }
 
@@ -349,6 +353,9 @@ func StatusLine(s guard.Snapshot) string {
 	case guard.OK:
 		return T("ok")
 	case guard.Suspect:
+		if !s.Config.CloseApps && s.Reason != guard.NetChanged {
+			return T("frozen.hold", capFirst(reasonText(s.Reason)))
+		}
 		switch s.Reason {
 		case guard.NetChanged:
 			return T("netchanged")
@@ -376,6 +383,14 @@ func StatusLine(s guard.Snapshot) string {
 		return T("blocked.ip")
 	}
 	return ""
+}
+
+// capFirst: "нет интернета" -> "Нет интернета" at the start of a sentence.
+func capFirst(s string) string {
+	for i, r := range s {
+		return strings.ToUpper(string(r)) + s[i+len(string(r)):]
+	}
+	return s
 }
 
 func reasonText(r guard.Reason) string {
@@ -450,6 +465,9 @@ func Notification(e guard.Event) (title, body string, ok bool) {
 	case guard.EvAutoAllowed:
 		return T("ev.autoallowed.t"), T("ev.autoallowed.b", ipc), true
 	case guard.EvFrozen:
+		if e.Dur == 0 && e.Reason != guard.NetChanged { // apps are never closed: no deadline to promise
+			return T("ev.frozen.t", apps), T("ev.frozen.hold.b", capFirst(reasonText(e.Reason))), true
+		}
 		switch e.Reason {
 		case guard.Offline:
 			return T("ev.frozen.t", apps), T("ev.frozen.off.b", Dur(e.Dur)), true

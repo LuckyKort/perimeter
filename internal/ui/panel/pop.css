@@ -3,14 +3,14 @@
    (NSVisualEffectView), so the page stays translucent on top of it.
    System type: SF Pro for text, SF Pro Rounded with tabular figures for
    numbers. Colour means state only: green - fine, orange - frozen,
-   red - closed, gray - paused; blue is reserved for the one main action. */
+   red - closed, gray - paused. Neutral greys, a graphite accent. */
 
 :root {
-  --blue: #007AFF; --ok: #34C759; --warn: #FF9500; --bad: #FF3B30; --gray: #8E8E93;
-  --text: #1D1D1F; --muted: rgba(29, 29, 31, .56); --faint: rgba(29, 29, 31, .32);
-  --fill: rgba(120, 120, 128, .10); --fill-h: rgba(120, 120, 128, .17);
+  --accent: #6E6E6E; --ok: #34C759; --warn: #FF9500; --bad: #FF3B30; --gray: #8E8E8E;
+  --text: #1C1C1C; --muted: rgba(28, 28, 28, .56); --faint: rgba(28, 28, 28, .32);
+  --fill: rgba(128, 128, 128, .10); --fill-h: rgba(128, 128, 128, .17);
   --card: rgba(255, 255, 255, .62); --hair: rgba(0, 0, 0, .07); --hi: rgba(255, 255, 255, .9);
-  --tint: rgba(246, 246, 248, .5); --solid: #F2F2F5;
+  --tint: rgba(246, 246, 246, .5); --solid: #F2F2F2;
   --spring: cubic-bezier(.22, 1.2, .36, 1); --ease: cubic-bezier(.2, .8, .2, 1);
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --round: ui-rounded, "SF Pro Rounded", -apple-system, "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
@@ -18,11 +18,11 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --blue: #0A84FF; --ok: #30D158; --warn: #FF9F0A; --bad: #FF453A; --gray: #98989D;
-    --text: #F5F5F7; --muted: rgba(235, 235, 245, .58); --faint: rgba(235, 235, 245, .3);
-    --fill: rgba(120, 120, 128, .2); --fill-h: rgba(120, 120, 128, .3);
-    --card: rgba(44, 44, 48, .55); --hair: rgba(255, 255, 255, .07); --hi: rgba(255, 255, 255, .08);
-    --tint: rgba(22, 22, 26, .42); --solid: #1C1C1F;
+    --accent: #5C5C5C; --ok: #30D158; --warn: #FF9F0A; --bad: #FF453A; --gray: #989898;
+    --text: #F2F2F2; --muted: rgba(235, 235, 235, .58); --faint: rgba(235, 235, 235, .3);
+    --fill: rgba(128, 128, 128, .2); --fill-h: rgba(128, 128, 128, .3);
+    --card: rgba(44, 44, 44, .55); --hair: rgba(255, 255, 255, .07); --hi: rgba(255, 255, 255, .08);
+    --tint: rgba(22, 22, 22, .42); --solid: #1C1C1C;
     color-scheme: dark;
   }
 }
@@ -36,7 +36,7 @@ body {
 }
 body::-webkit-scrollbar { display: none; }
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .pop { padding: 12px; background: var(--tint); } /* no min-height: the native window takes the content's height (fit) */
 html.win .pop { background: none; }
@@ -100,7 +100,7 @@ html.win .pop { background: none; }
 .ring small { font: 500 9.5px var(--sans); color: var(--muted); margin-top: 1px; }
 
 /* protected apps: a grouped list */
-.lbl { font-size: 11.5px; font-weight: 600; color: var(--muted); margin: 14px 6px 6px; }
+.lbl { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin: 16px 8px 7px; }
 .group { border-radius: 14px; background: var(--card); overflow: hidden; }
 .app { display: flex; align-items: center; gap: 10px; padding: 7px 12px 7px 8px; position: relative; font-size: 13px; font-weight: 500; }
 .app + .app::before { content: ""; position: absolute; top: 0; left: 44px; right: 0; height: .5px; background: var(--hair); }
@@ -114,7 +114,7 @@ html.win .pop { background: none; }
 .av.app-ic { width: 32px; height: 32px; margin: -3px; background: none; box-shadow: none; border-radius: 0; }
 .sug .av.app-ic { width: 26px; height: 26px; margin: -2px; }
 .none { font-size: 12.5px; color: var(--muted); padding: 10px 12px; }
-.none button { color: var(--blue); font-weight: 600; }
+.none button { color: var(--accent); font-weight: 600; }
 
 /* actions */
 .acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
@@ -126,7 +126,7 @@ html.win .pop { background: none; }
 .act:active { transform: scale(.97); transition-duration: .1s; }
 .act i { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 6px; background: var(--fill); }
 .act svg { width: 15px; height: 15px; display: block; }
-.act.on i { background: var(--blue); color: #fff; }
+.act.on i { background: var(--accent); color: #fff; }
 .chips { display: flex; gap: 4px; margin-top: 8px; padding: 3px; border-radius: 12px; background: var(--fill); animation: rise .3s var(--spring) both; }
 .chips button { flex: 1; height: 28px; border-radius: 9px; font-size: 12px; font-weight: 600; transition: background .2s; }
 .chips button:hover { background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
@@ -139,12 +139,12 @@ html.win .pop { background: none; }
 .btn:active { transform: scale(.98); transition-duration: .1s; }
 .btn svg { width: 14px; height: 14px; }
 .btn small { font-weight: 400; color: var(--muted); }
-.btn.pri { background: var(--blue); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 4px 14px color-mix(in srgb, var(--blue) 35%, transparent); }
-.btn.pri:hover { background: var(--blue); filter: brightness(1.08); }
+.btn.pri { background: var(--accent); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+.btn.pri:hover { background: var(--accent); filter: brightness(1.08); }
 
 /* update / what's new / first run */
 .upd { border-radius: 18px; padding: 14px 14px 12px; margin-bottom: 10px;
-  background: radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--blue) 24%, transparent), transparent 70%), var(--card); }
+  background: radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 70%), var(--card); }
 .upd .h { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .upd .v { font: 600 14px var(--sans); letter-spacing: -.01em; }
 .upd .sp { flex: 1; }
@@ -152,14 +152,14 @@ html.win .pop { background: none; }
 .upd .x:hover { background: var(--fill-h); color: var(--text); }
 .upd ul { padding-left: 16px; margin: 8px 0 12px; font-size: 12.5px; line-height: 1.5; }
 .upd li { margin-bottom: 2px; }
-.upd li::marker { color: var(--blue); }
+.upd li::marker { color: var(--accent); }
 .upd li span { color: var(--muted); }
 .upd .b { display: flex; gap: 6px; }
 .upd .b .btn { height: 34px; font-size: 12.5px; }
 .upd .note { font-size: 12px; color: var(--muted); }
-.new { font-size: 10px; font-weight: 700; letter-spacing: .02em; padding: 2px 7px; border-radius: 999px; background: var(--blue); color: #fff; }
+.new { font-size: 10px; font-weight: 700; letter-spacing: .02em; padding: 2px 7px; border-radius: 999px; background: var(--accent); color: #fff; }
 .bar { height: 5px; border-radius: 999px; background: var(--fill-h); overflow: hidden; margin: 10px 0 6px; }
-.bar i { display: block; height: 100%; border-radius: 999px; background: var(--blue); transition: width .4s var(--ease); }
+.bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width .4s var(--ease); }
 .bar.unknown i { width: 40%; animation: slide 1.2s var(--ease) infinite alternate; }
 @keyframes slide { from { transform: translateX(-30%); } to { transform: translateX(170%); } }
 
@@ -173,7 +173,7 @@ html.win .pop { background: none; }
 .sug { display: flex; align-items: center; gap: 7px; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--fill); font-size: 12.5px; font-weight: 500; transition: background .2s, transform .35s var(--spring); }
 .sug:hover { background: var(--fill-h); transform: translateY(-1px); }
 .sug .av { width: 22px; height: 22px; border-radius: 50%; font-size: 11px; }
-.sug > span:last-child { color: var(--blue); font-weight: 700; }
+.sug > span:last-child { color: var(--accent); font-weight: 700; }
 
 /* footer */
 /* footer: the way to the full panel */
@@ -184,3 +184,6 @@ html.win .pop { background: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* a flag emoji eats the space after it: give it a real gap */
+.flag { margin-right: .4em; }

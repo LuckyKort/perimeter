@@ -325,7 +325,7 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 			"grace": int(cfg.Grace.D().Seconds()), "close_timeout": int(cfg.CloseTimeout.D().Seconds()),
 			"check_interval": int(cfg.CheckInterval.D().Seconds()), "min_agree": cfg.MinAgree,
 			"freeze_on_network_change": cfg.FreezeOnNetworkChange, "block_when_offline": cfg.BlockWhenOffline,
-			"check_ipv6": cfg.CheckIPv6, "dns_check": cfg.DNSCheck, "notifications": cfg.Notifications,
+			"check_ipv6": cfg.CheckIPv6, "close_apps": cfg.CloseApps, "dns_check": cfg.DNSCheck, "notifications": cfg.Notifications,
 			"menubar": cfg.MenuBar, "update_check": cfg.UpdateCheck, "language": cfg.Language,
 		},
 		"autostart":  app.AutostartEnabled(),
@@ -604,7 +604,7 @@ func (s *Server) settings(now time.Time, raw json.RawMessage) error {
 		}
 		for k, dst := range map[string]*bool{
 			"freeze_on_network_change": &c.FreezeOnNetworkChange, "block_when_offline": &c.BlockWhenOffline,
-			"check_ipv6": &c.CheckIPv6, "notifications": &c.Notifications, "update_check": &c.UpdateCheck,
+			"check_ipv6": &c.CheckIPv6, "close_apps": &c.CloseApps, "notifications": &c.Notifications, "update_check": &c.UpdateCheck,
 		} {
 			if v, ok := m[k].(bool); ok {
 				*dst = v

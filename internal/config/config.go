@@ -65,6 +65,7 @@ type Config struct {
 
 	FreezeOnNetworkChange bool     `yaml:"freeze_on_network_change"`
 	BlockWhenOffline      bool     `yaml:"block_when_offline"`
+	CloseApps             bool     `yaml:"close_apps"` // off: apps stay frozen until an allowed IP is back, never closed
 	Grace                 Duration `yaml:"grace"`
 	CloseTimeout          Duration `yaml:"close_timeout"`
 	CheckInterval         Duration `yaml:"check_interval"`
@@ -99,6 +100,7 @@ func Default() *Config {
 		Apps:                  []string{"claude"},
 		FreezeOnNetworkChange: true,
 		BlockWhenOffline:      true,
+		CloseApps:             true,
 		Grace:                 Duration(20 * time.Second),
 		CloseTimeout:          Duration(5 * time.Second),
 		CheckInterval:         Duration(5 * time.Second),

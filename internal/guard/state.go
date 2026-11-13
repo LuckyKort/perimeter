@@ -98,7 +98,7 @@ func (g *Guard) snapshot(now time.Time) Snapshot {
 	first := true
 	for _, gr := range g.groups {
 		gs := GroupState{Key: gr.key, Apps: gr.names(), Status: gr.status, Reason: gr.reason, Frozen: len(gr.frozen)}
-		if gr.status == Suspect {
+		if gr.status == Suspect && g.cfg.CloseApps { // no countdown when apps are never closed
 			gs.GraceLeft = max(0, g.cfg.Grace.D()-now.Sub(gr.since))
 		}
 		gs.Running = procs.AppNames(gr.running)

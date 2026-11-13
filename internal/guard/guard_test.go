@@ -202,6 +202,45 @@ func TestGraceRunsOutThenBlockedThenAutoUnblock(t *testing.T) {
 	}
 }
 
+// close_apps off: the apps stay frozen however long it takes, nothing is closed,
+// a relaunch is frozen too, and they resume when an allowed IP is back.
+func TestFreezeOnlyNeverCloses(t *testing.T) {
+	h := newHarness(t, "64.137.54.87")
+	c := config.Default()
+	c.Allow.IPs = []string{"64.137.54.87"}
+	c.CloseApps = false
+	h.g.SetConfig(h.now, c)
+	h.step(0)
+	h.probe("64.137.54.87", "NL")
+	h.step(time.Second)
+	h.probe("95.24.1.1", "RU")
+	h.want(Suspect)
+	if !h.p.frozen[claude.PID] {
+		t.Fatal("claude not frozen")
+	}
+	if left := h.g.Snapshot(h.now).GraceLeft; left != 0 {
+		t.Fatalf("countdown %v without closing", left)
+	}
+
+	h.step(10 * time.Minute)
+	h.want(Suspect)
+	if h.p.closed[claude.PID] || h.p.killed[claude.PID] {
+		t.Fatal("claude closed with close_apps off")
+	}
+	relaunched := procs.Proc{PID: 101, Name: "Claude", Path: claude.Path}
+	h.p.procs = append(h.p.procs, relaunched)
+	h.step(500 * time.Millisecond)
+	if h.p.killed[101] || !h.p.frozen[101] {
+		t.Fatalf("relaunch: killed %v frozen %v, want frozen only", h.p.killed[101], h.p.frozen[101])
+	}
+
+	h.probe("64.137.54.87", "NL")
+	h.want(OK)
+	if h.p.frozen[claude.PID] || h.p.frozen[101] {
+		t.Fatal("not resumed when the allowed IP came back")
+	}
+}
+
 func TestCountryAllowList(t *testing.T) {
 	h := newHarness(t)
 	h.g.cfg.Allow.Countries = []string{"NL"}

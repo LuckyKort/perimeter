@@ -312,7 +312,7 @@ func (g *Guard) Step(now time.Time) {
 	}
 
 	for _, gr := range g.groups {
-		if gr.status == Suspect && now.Sub(gr.since) >= g.cfg.Grace.D() {
+		if gr.status == Suspect && g.cfg.CloseApps && now.Sub(gr.since) >= g.cfg.Grace.D() {
 			g.toBlocked(now, gr)
 		}
 	}
@@ -448,9 +448,14 @@ func (g *Guard) reevaluate(now time.Time, gr *group) {
 	}
 }
 
+// event: Dur is the grace time, 0 when apps are never closed (close_apps off).
 func (g *Guard) event(gr *group, kind EventKind, apps []string, notify bool) Event {
+	dur := g.cfg.Grace.D()
+	if !g.cfg.CloseApps {
+		dur = 0
+	}
 	return Event{Kind: kind, Reason: gr.reason, IP: g.ip, Country: g.country, IP6: g.ip6, Country6: g.cc6,
-		Others: g.others, DNS: g.dns, DNSCountry: g.dnsCC, Apps: apps, Dur: g.cfg.Grace.D(), Notify: notify}
+		Others: g.others, DNS: g.dns, DNSCountry: g.dnsCC, Apps: apps, Dur: dur, Notify: notify}
 }
 
 func (g *Guard) toOK(now time.Time, gr *group) {

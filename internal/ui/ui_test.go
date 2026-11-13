@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"image/png"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,5 +86,21 @@ func TestICO(t *testing.T) {
 	}
 	if BarLit(10*time.Second, 20*time.Second) != 4 || BarLit(0, 20*time.Second) != 0 || BarLit(20*time.Second, 20*time.Second) != 8 {
 		t.Fatal("BarLit")
+	}
+}
+
+// close_apps off: neither the status nor the notification promises to close.
+func TestFreezeOnlyTexts(t *testing.T) {
+	defer func(l string) { Lang = l }(Lang)
+	Lang = "ru"
+	cfg := config.Default()
+	cfg.CloseApps = false
+	line := StatusLine(guard.Snapshot{Config: cfg, Status: guard.Suspect, Reason: guard.Offline})
+	if strings.Contains(line, "закрою") || !strings.HasPrefix(line, "Нет интернета") {
+		t.Fatalf("status %q", line)
+	}
+	_, body, ok := Notification(guard.Event{Kind: guard.EvFrozen, Reason: guard.IPNotAllowed, IP: "95.24.1.1", Apps: []string{"Claude"}, Dur: 0, Notify: true})
+	if !ok || strings.Contains(body, "закрою") || !strings.Contains(body, "продолжат") {
+		t.Fatalf("notification %q", body)
 	}
 }
