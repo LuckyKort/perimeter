@@ -55,6 +55,9 @@ type Tray struct {
 	mOpen                                   *systray.MenuItem // "Open Perimeter": the tray window
 	pop                                     *popover
 	latest                                  update.Release
+	checkedAt                               time.Time
+	checking                                bool
+	notified                                string
 	installing                              bool
 	done, total                             int64
 	quitNow                                 chan struct{}
@@ -292,38 +295,61 @@ func (t *Tray) iconClicked() {
 	}
 }
 
-// updateCheckEvery: often enough that a fix reaches people the same day.
-const updateCheckEvery = 6 * time.Hour
+const (
+	updateCheckEvery = time.Hour        // in the background
+	updateRecheck    = 10 * time.Minute // when the panel or the tray window is open
+)
 
-// updateLoop checks GitHub a minute after start and then every few hours.
+// updateLoop checks GitHub a minute after start and then every hour.
 func (t *Tray) updateLoop() {
 	time.Sleep(time.Minute)
-	notified := ""
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		rel, err := update.Latest(ctx)
-		cancel()
-		if err == nil && update.Newer(t.Version, rel.Version()) {
-			t.mu.Lock()
-			t.latest = rel
-			t.mu.Unlock()
-			t.mUpdate.SetTitle("⬆ " + T("update.available", rel.Version()))
-			t.mUpdate.Enable()
-			t.mUpdate.Show()
-			if notified != rel.Version() {
-				notified = rel.Version()
-				app.Notify(T("update.t", rel.Version()), T("update.b", rel.Version()))
-				app.Logf("доступна версия %s", rel.Version())
-			}
-		}
+		t.checkUpdate()
 		time.Sleep(updateCheckEvery)
 	}
 }
 
-// UpdateAvailable is the newer version found, or "".
+// checkUpdate asks GitHub for the newest release, one request at a time.
+// checkedAt stays zero while checks are off; notified is the version already announced.
+func (t *Tray) checkUpdate() {
+	t.mu.Lock()
+	if t.checking {
+		t.mu.Unlock()
+		return
+	}
+	t.checking, t.checkedAt = true, time.Now()
+	t.mu.Unlock()
+	defer func() { t.mu.Lock(); t.checking = false; t.mu.Unlock() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	rel, err := update.Latest(ctx)
+	cancel()
+	if err != nil || !update.Newer(t.Version, rel.Version()) {
+		return
+	}
+	t.mu.Lock()
+	t.latest = rel
+	fresh := t.notified != rel.Version()
+	t.notified = rel.Version()
+	t.mu.Unlock()
+	t.mUpdate.SetTitle("⬆ " + T("update.available", rel.Version()))
+	t.mUpdate.Enable()
+	t.mUpdate.Show()
+	if fresh {
+		app.Notify(T("update.t", rel.Version()), T("update.b", rel.Version()))
+		app.Logf("доступна версия %s", rel.Version())
+	}
+}
+
+// UpdateAvailable is the newer version found, or "". The panel and the tray
+// window ask for it on every refresh, so while one is open a release shows up
+// within minutes instead of waiting for the hourly check.
 func (t *Tray) UpdateAvailable() string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	if !t.checkedAt.IsZero() && !t.checking && time.Since(t.checkedAt) > updateRecheck {
+		go t.checkUpdate()
+	}
 	if update.Newer(t.Version, t.latest.Version()) {
 		return t.latest.Version()
 	}
