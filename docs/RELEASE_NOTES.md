@@ -1,25 +1,12 @@
-**Установка и обновление**
-
-Уже стоит Kordon 1.1 или новее - обновитесь из меню (пункт «Обновить до …») или командой `kordon update`. Первая установка:
-
-macOS и Linux:
-```bash
-curl -fsSL https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.sh | sh
-```
-
-Windows (PowerShell):
-```powershell
-irm https://raw.githubusercontent.com/ef1m03/kordon/main/scripts/install.ps1 | iex
-```
-
-Подробный гайд: [README](https://github.com/ef1m03/kordon#readme). Файлы ниже - для ручной установки.
+**Установка**
 
 | Файл | Для чего |
 |---|---|
-| `Kordon-macos.zip` | macOS 11+, Apple Silicon и Intel |
-| `kordon-windows-amd64.exe` | Windows 10/11 x64 |
-| `kordon-windows-arm64.exe` | Windows на ARM |
-| `kordon-linux-*.tar.gz` | Linux x64 / ARM64 |
+| `Perimeter-macos.zip` | macOS 11+, Apple Silicon и Intel |
+| `perimeter-windows-amd64.exe` | Windows 10/11 x64 |
+| `perimeter-windows-arm64.exe` | Windows на ARM |
+| `perimeter-linux-*.tar.gz` | Linux x64 / ARM64 |
+| `perimeter-extension.zip` | расширение для Chrome, Яндекс Браузера, Edge, Brave |
 | `SHA256SUMS.txt` | контрольные суммы |
 
-Сделано в [Efimov Dev](https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=release).
+Perimeter распространяется по лицензии GPL-3.0 и основан на Kordon © Efimov Dev.

@@ -62,7 +62,7 @@ func AutostartEnabled() bool {
 		return false
 	}
 	defer k.Close()
-	_, _, err = k.GetStringValue("Kordon")
+	_, _, err = k.GetStringValue("Perimeter")
 	return err == nil
 }
 
@@ -73,11 +73,11 @@ func SetAutostart(on bool) error {
 	}
 	defer k.Close()
 	if !on {
-		return k.DeleteValue("Kordon")
+		return k.DeleteValue("Perimeter")
 	}
 	exe, err := os.Executable()
 	if err != nil {
 		return err
 	}
-	return k.SetStringValue("Kordon", `"`+exe+`"`)
+	return k.SetStringValue("Perimeter", `"`+exe+`"`)
 }

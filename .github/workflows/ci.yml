@@ -33,11 +33,11 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then ./scripts/build-mac.sh
-          elif [ "$RUNNER_OS" = "Windows" ]; then go build -ldflags "-H windowsgui" -o kordon.exe ./cmd/kordon
-          else CGO_ENABLED=0 go build -o kordon ./cmd/kordon; fi
+          elif [ "$RUNNER_OS" = "Windows" ]; then go build -ldflags "-H windowsgui" -o perimeter.exe ./cmd/perimeter
+          else CGO_ENABLED=0 go build -o perimeter ./cmd/perimeter; fi
       - name: Smoke
         shell: bash
         run: |
-          if [ "$RUNNER_OS" = "macOS" ]; then dist/Kordon.app/Contents/MacOS/kordon version
-          elif [ "$RUNNER_OS" = "Windows" ]; then ./kordon.exe version
-          else ./kordon version; fi
+          if [ "$RUNNER_OS" = "macOS" ]; then dist/Perimeter.app/Contents/MacOS/perimeter version
+          elif [ "$RUNNER_OS" = "Windows" ]; then ./perimeter.exe version
+          else ./perimeter version; fi

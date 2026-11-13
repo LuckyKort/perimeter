@@ -1,13 +1,13 @@
-// Kordon freezes chosen apps the moment your network or public IP changes,
+// Perimeter freezes chosen apps the moment your network or public IP changes,
 // and closes them if an allowed IP doesn't come back.
 //
-//	kordon                 start in the menu bar / tray
-//	kordon status          what's going on right now
-//	kordon allow [IP|CC]   allow the current IP, a given IP/subnet or a country
-//	kordon config          print the config path
-//	kordon autostart on|off
-//	kordon headless        run without a tray icon (servers, Linux without a tray)
-//	kordon version
+//	perimeter                 start in the menu bar / tray
+//	perimeter status          what's going on right now
+//	perimeter allow [IP|CC]   allow the current IP, a given IP/subnet or a country
+//	perimeter config          print the config path
+//	perimeter autostart on|off
+//	perimeter headless        run without a tray icon (servers, Linux without a tray)
+//	perimeter version
 package main
 
 import (
@@ -22,13 +22,13 @@ import (
 
 	"github.com/gofrs/flock"
 
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/guard"
-	"github.com/ef1m03/kordon/internal/netwatch"
-	"github.com/ef1m03/kordon/internal/ui"
-	"github.com/ef1m03/kordon/internal/update"
-	"github.com/ef1m03/kordon/internal/window"
+	"perimeter/internal/app"
+	"perimeter/internal/config"
+	"perimeter/internal/guard"
+	"perimeter/internal/netwatch"
+	"perimeter/internal/ui"
+	"perimeter/internal/update"
+	"perimeter/internal/window"
 )
 
 var version = "dev"
@@ -37,7 +37,7 @@ func main() {
 	attachConsole()
 	if len(os.Args) > 1 {
 		if err := cli(os.Args[1:]); err != nil {
-			fmt.Fprintln(os.Stderr, "kordon:", err)
+			fmt.Fprintln(os.Stderr, "perimeter:", err)
 			os.Exit(1)
 		}
 		return
@@ -88,11 +88,11 @@ func run(tray bool) {
 		cfg = config.Default()
 	}
 	setupLang(cfg)
-	if created && os.Getenv("KORDON_DIR") == "" {
+	if created && os.Getenv("PERIMETER_DIR") == "" {
 		// First start: run at login by default, it's a kill switch after all.
 		_ = app.SetAutostart(true)
 	}
-	app.Logf("Kordon %s started", version)
+	app.Logf("Perimeter %s started", version)
 	update.Cleanup()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -107,25 +107,10 @@ func run(tray bool) {
 
 	done := make(chan struct{})
 	go func() { r.Run(); close(done) }()
-	go app.PingLoop(ctx, version, func() bool { return r.G.Snapshot(time.Now()).Config.UsagePing == "on" })
-	go func() {
-		// Notice a /stop in the bot, so the panel doesn't show a dead link.
-		for ctx.Err() == nil {
-			if app.TG.IsLinked() {
-				c, cancel := context.WithTimeout(ctx, 15*time.Second)
-				app.TG.Refresh(c)
-				cancel()
-			}
-			select {
-			case <-ctx.Done():
-			case <-time.After(30 * time.Minute):
-			}
-		}
-	}()
 	stop := func() {
 		cancel()
 		<-done // Run un-freezes everything before returning
-		app.Logf("Kordon stopped")
+		app.Logf("Perimeter stopped")
 	}
 
 	sig := make(chan os.Signal, 1)
@@ -153,7 +138,7 @@ func run(tray bool) {
 }
 
 func fatal(err error) {
-	fmt.Fprintln(os.Stderr, "kordon:", err)
+	fmt.Fprintln(os.Stderr, "perimeter:", err)
 	os.Exit(1)
 }
 
@@ -177,7 +162,7 @@ func cli(args []string) error {
 		return nil
 	case "autostart":
 		if len(args) < 2 || (args[1] != "on" && args[1] != "off") {
-			return errors.New("usage: kordon autostart on|off")
+			return errors.New("usage: perimeter autostart on|off")
 		}
 		return app.SetAutostart(args[1] == "on")
 	case "headless":
@@ -194,7 +179,7 @@ func cli(args []string) error {
 	case "popover":
 		return runPopover()
 	case "version", "--version", "-v":
-		fmt.Println("kordon", version)
+		fmt.Println("perimeter", version)
 		return nil
 	case "help", "--help", "-h":
 		fmt.Print(usage)
@@ -203,21 +188,19 @@ func cli(args []string) error {
 	return fmt.Errorf("unknown command %q\n\n%s", args[0], usage)
 }
 
-const usage = `Kordon - kill switch for apps: freezes them when your network or IP changes.
+const usage = `Perimeter - kill switch for apps: freezes them when your network or IP changes.
 
-  kordon                 start in the menu bar / tray
-  kordon status          current IP, country and state
-  kordon allow           allow the current IP
-  kordon allow 1.2.3.4   allow an IP or a subnet (1.2.3.0/24)
-  kordon allow NL        allow a country
-  kordon config          print the config file path
-  kordon autostart on|off
-  kordon panel           open the Kordon panel
-  kordon update          install the latest version
-  kordon headless        run without a tray icon
-  kordon version
-
-https://github.com/ef1m03/kordon
+  perimeter                 start in the menu bar / tray
+  perimeter status          current IP, country and state
+  perimeter allow           allow the current IP
+  perimeter allow 1.2.3.4   allow an IP or a subnet (1.2.3.0/24)
+  perimeter allow NL        allow a country
+  perimeter config          print the config file path
+  perimeter autostart on|off
+  perimeter panel           open the Perimeter panel
+  perimeter update          install the latest version
+  perimeter headless        run without a tray icon
+  perimeter version
 `
 
 func status() error {
@@ -239,9 +222,9 @@ func status() error {
 	s, err := app.ReadState()
 	running := err == nil && processAlive(s.PID) && time.Since(s.Updated) < 24*time.Hour
 	if !running {
-		fmt.Println("Kordon:  not running")
+		fmt.Println("Status:  not running")
 	} else {
-		fmt.Println("Kordon: ", s.Line)
+		fmt.Println("Status: ", s.Line)
 		if len(s.Apps) > 0 {
 			fmt.Println("Apps:   ", strings.Join(s.Apps, ", "))
 		}
@@ -291,7 +274,7 @@ func selfUpdate() error {
 		return err
 	}
 	if !update.Newer(version, rel.Version()) {
-		fmt.Println("kordon", version, "is the latest version")
+		fmt.Println("perimeter", version, "is the latest version")
 		return nil
 	}
 	fmt.Println("installing", rel.Version(), "…")
@@ -306,32 +289,32 @@ func selfUpdate() error {
 		if stopProcess(s.PID) {
 			return restart()
 		}
-		fmt.Println("restart Kordon (Quit in the menu and open it again) to use it")
+		fmt.Println("restart Perimeter (Quit in the menu and open it again) to use it")
 	}
 	return nil
 }
 
-// runPopover is the tray window: Kordon starts it hidden and sends it "toggle"
+// runPopover is the tray window: Perimeter starts it hidden and sends it "toggle"
 // lines on stdin when the icon is clicked. Not for people, so not in usage.
 func runPopover() error {
 	p, err := ui.ReadPanelInfo()
 	if err != nil {
-		return errors.New("Kordon is not running")
+		return errors.New("Perimeter is not running")
 	}
 	return window.Popover(p.URL+"pop.html?t="+p.Token, os.Stdin)
 }
 
-// openPanel shows the running Kordon's panel in a window (or the browser on Linux).
+// openPanel shows the running Perimeter's panel in a window (or the browser on Linux).
 func openPanel(page string) error {
 	p, err := ui.ReadPanelInfo()
 	if err != nil {
-		return errors.New("Kordon is not running - start it first")
+		return errors.New("Perimeter is not running - start it first")
 	}
 	url := p.URL + "?t=" + p.Token
 	if page != "" && !strings.ContainsAny(page, "?#&/") {
 		url += "#" + page
 	}
-	if err := window.Open(url, "Kordon", ui.T("panel.close"), ui.T("panel.quit")); err != nil {
+	if err := window.Open(url, "Perimeter", ui.T("panel.close"), ui.T("panel.quit")); err != nil {
 		return app.OpenURL(url)
 	}
 	return nil

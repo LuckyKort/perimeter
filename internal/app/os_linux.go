@@ -8,7 +8,7 @@ import (
 )
 
 func Notify(title, body string) {
-	_ = exec.Command("notify-send", "-a", "Kordon", title, body).Start()
+	_ = exec.Command("notify-send", "-a", "Perimeter", title, body).Start()
 }
 
 func OpenFile(path string) error { return exec.Command("xdg-open", path).Start() }
@@ -19,7 +19,7 @@ func SystemLanguage() string { return langFromEnv() }
 
 func desktopFile() string {
 	base, _ := os.UserConfigDir()
-	return filepath.Join(base, "autostart", "kordon.desktop")
+	return filepath.Join(base, "autostart", "perimeter.desktop")
 }
 
 func AutostartEnabled() bool {
@@ -39,5 +39,5 @@ func SetAutostart(on bool) error {
 		return err
 	}
 	return os.WriteFile(desktopFile(), []byte(fmt.Sprintf(
-		"[Desktop Entry]\nType=Application\nName=Kordon\nExec=%q\nX-GNOME-Autostart-enabled=true\n", exe)), 0o644)
+		"[Desktop Entry]\nType=Application\nName=Perimeter\nExec=%q\nX-GNOME-Autostart-enabled=true\n", exe)), 0o644)
 }

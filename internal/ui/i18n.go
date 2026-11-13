@@ -10,8 +10,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
 
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/guard"
+	"perimeter/internal/guard"
 )
 
 // Lang is "ru" or "en", set once at start.
@@ -39,7 +38,7 @@ var msgs = map[string]map[string]string{
 		"ev.blocked.v6.b":     "IPv6 %s идёт мимо VPN. Включите IPv6 в VPN или отключите его в системе.",
 		"ev.blocked.unconf.b": "Не удалось подтвердить IP: сервисы называют разные адреса (%s).",
 		"paused.until":        "Пауза до %s",
-		"paused.forever":      "Пауза до перезапуска Kordon",
+		"paused.forever":      "Пауза до перезапуска Perimeter",
 		"now":                 "Сейчас: %s",
 		"now.offline":         "Сейчас: нет интернета",
 		"now.unknown":         "Сейчас: проверяю…",
@@ -68,18 +67,17 @@ var msgs = map[string]map[string]string{
 		"menubar.ip":          "Страну и IP",
 		"menubar.country":     "Только страну",
 		"menubar.icon":        "Ничего (для созвонов)",
-		"about":               "Kordon %s на GitHub",
-		"studio":              "Сделано в Efimov Dev · efimovdev.ru",
+		"about":               "Perimeter %s на GitHub",
 		"quit":                "Выйти (защита выключится)",
-		"tip.ok":              "Kordon: защита включена",
-		"tip.frozen":          "Kordon: приложения заморожены",
-		"tip.blocked":         "Kordon: заблокировано",
-		"tip.paused":          "Kordon: пауза",
+		"tip.ok":              "Perimeter: защита включена",
+		"tip.frozen":          "Perimeter: приложения заморожены",
+		"tip.blocked":         "Perimeter: заблокировано",
+		"tip.paused":          "Perimeter: пауза",
 		"sec":                 "%d с",
 		"min":                 "%d мин",
 
 		"ev.autoallowed":    "Разрешён текущий IP %s",
-		"ev.autoallowed.t":  "Kordon запущен",
+		"ev.autoallowed.t":  "Perimeter запущен",
 		"ev.autoallowed.b":  "Разрешён текущий IP: %s. Если VPN меняет адреса, разрешите всю страну в меню.",
 		"ev.netchanged":     "Сеть изменилась",
 		"ev.ipchanged":      "Новый IP: %s",
@@ -111,11 +109,8 @@ var msgs = map[string]map[string]string{
 		"reason.net":        "сеть изменилась",
 		"cfg.error.t":       "Ошибка в настройках",
 		"cfg.error.b":       "%v. Работаю со старыми настройками.",
-		"panel":             "Открыть панель Kordon…",
-		"open.pop":          "Открыть Kordon",
-		"panel.err.tg":      "Сервис Kordon сейчас недоступен, попробуйте позже",
-		"tg.test":           "✅ Проверка: уведомления Kordon приходят сюда.",
-		"tg.hello":          "✅ Kordon подключён к этому чату.",
+		"panel":             "Открыть панель Perimeter…",
+		"open.pop":          "Открыть Perimeter",
 		"panel.close":       "Закрыть окно",
 		"panel.quit":        "Закрыть панель",
 		"trust":             "Доверять этой сети (без проверки IP)",
@@ -132,17 +127,17 @@ var msgs = map[string]map[string]string{
 		"ev.frozen.dns.b":   "IP через VPN, но DNS идёт через %s. Если не исправится за %s, закрою.",
 		"ev.blocked.dns.b":  "DNS идёт через %s мимо VPN. Включите DNS в настройках VPN.",
 		"panel.err.custom":  "Нужны название и хотя бы одно правило поиска",
-		"panel.err.trust":   "Не удалось узнать эту сеть: Kordon не видит роутер (например, при подключении только через VPN)",
+		"panel.err.trust":   "Не удалось узнать эту сеть: Perimeter не видит роутер (например, при подключении только через VPN)",
 		"panel.err.country": "Нужен двухбуквенный код страны",
 		"update.available":  "Обновить до %s",
 		"update.installing": "Устанавливаю %s…",
-		"update.t":          "Вышел Kordon %s",
-		"update.b":          "Обновить можно в меню Kordon, пункт «Обновить до %s». Настройки сохранятся.",
+		"update.t":          "Вышел Perimeter %s",
+		"update.b":          "Обновить можно в меню Perimeter, пункт «Обновить до %s». Настройки сохранятся.",
 		"update.failed.t":   "Обновление не установилось",
 		"update.failed.b":   "%v. Открываю страницу релиза.",
-		"crash.t":           "Kordon остановился",
-		"crash.b":           "Он упал несколько раз подряд. Подробности в журнале: %s. Запустите Kordon заново и напишите нам в GitHub Issues.",
-		"already.t":         "Kordon уже запущен",
+		"crash.t":           "Perimeter остановился",
+		"crash.b":           "Он упал несколько раз подряд. Подробности в журнале: %s. Запустите Perimeter заново и напишите нам в GitHub Issues.",
+		"already.t":         "Perimeter уже запущен",
 		"already.b":         "Значок в строке меню (на Windows - у часов, может прятаться под стрелкой ^).",
 	},
 	"en": {
@@ -166,7 +161,7 @@ var msgs = map[string]map[string]string{
 		"ev.blocked.v6.b":     "IPv6 %s bypasses the VPN. Enable IPv6 in your VPN or turn it off in the system.",
 		"ev.blocked.unconf.b": "Couldn't confirm the IP: services report different addresses (%s).",
 		"paused.until":        "Paused until %s",
-		"paused.forever":      "Paused until Kordon restarts",
+		"paused.forever":      "Paused until Perimeter restarts",
 		"now":                 "Now: %s",
 		"now.offline":         "Now: no internet",
 		"now.unknown":         "Now: checking…",
@@ -195,18 +190,17 @@ var msgs = map[string]map[string]string{
 		"menubar.ip":          "Country and IP",
 		"menubar.country":     "Country only",
 		"menubar.icon":        "Nothing (for screen sharing)",
-		"about":               "Kordon %s on GitHub",
-		"studio":              "Made by Efimov Dev · efimovdev.ru",
+		"about":               "Perimeter %s on GitHub",
 		"quit":                "Quit (turns protection off)",
-		"tip.ok":              "Kordon: protection is on",
-		"tip.frozen":          "Kordon: apps frozen",
-		"tip.blocked":         "Kordon: blocked",
-		"tip.paused":          "Kordon: paused",
+		"tip.ok":              "Perimeter: protection is on",
+		"tip.frozen":          "Perimeter: apps frozen",
+		"tip.blocked":         "Perimeter: blocked",
+		"tip.paused":          "Perimeter: paused",
 		"sec":                 "%ds",
 		"min":                 "%d min",
 
 		"ev.autoallowed":    "Allowed the current IP %s",
-		"ev.autoallowed.t":  "Kordon is running",
+		"ev.autoallowed.t":  "Perimeter is running",
 		"ev.autoallowed.b":  "Allowed the current IP: %s. If your VPN rotates addresses, allow the whole country in the menu.",
 		"ev.netchanged":     "Network changed",
 		"ev.ipchanged":      "New IP: %s",
@@ -238,11 +232,8 @@ var msgs = map[string]map[string]string{
 		"reason.net":        "network changed",
 		"cfg.error.t":       "Settings error",
 		"cfg.error.b":       "%v. Keeping the previous settings.",
-		"panel":             "Open Kordon panel…",
-		"open.pop":          "Open Kordon",
-		"panel.err.tg":      "The Kordon service is unavailable right now, try later",
-		"tg.test":           "✅ Test: Kordon alerts arrive here.",
-		"tg.hello":          "✅ Kordon is connected to this chat.",
+		"panel":             "Open Perimeter panel…",
+		"open.pop":          "Open Perimeter",
 		"panel.close":       "Close Window",
 		"panel.quit":        "Quit Panel",
 		"trust":             "Trust this network (no IP check)",
@@ -259,17 +250,17 @@ var msgs = map[string]map[string]string{
 		"ev.frozen.dns.b":   "The IP goes through the VPN, but DNS goes through %s. If it isn't fixed within %s, I'll close it.",
 		"ev.blocked.dns.b":  "DNS goes through %s, around the VPN. Turn on DNS in your VPN settings.",
 		"panel.err.custom":  "A name and at least one match rule are needed",
-		"panel.err.trust":   "Can't identify this network: Kordon doesn't see the router (e.g. when connected through a VPN only)",
+		"panel.err.trust":   "Can't identify this network: Perimeter doesn't see the router (e.g. when connected through a VPN only)",
 		"panel.err.country": "A two-letter country code is needed",
 		"update.available":  "Update to %s",
 		"update.installing": "Installing %s…",
-		"update.t":          "Kordon %s is out",
-		"update.b":          "Update from the Kordon menu: \"Update to %s\". Your settings stay.",
+		"update.t":          "Perimeter %s is out",
+		"update.b":          "Update from the Perimeter menu: \"Update to %s\". Your settings stay.",
 		"update.failed.t":   "Update failed",
 		"update.failed.b":   "%v. Opening the release page.",
-		"crash.t":           "Kordon stopped",
-		"crash.b":           "It crashed several times in a row. Details in the log: %s. Start Kordon again and please report it on GitHub Issues.",
-		"already.t":         "Kordon is already running",
+		"crash.t":           "Perimeter stopped",
+		"crash.b":           "It crashed several times in a row. Details in the log: %s. Start Perimeter again and please report it on GitHub Issues.",
+		"already.t":         "Perimeter is already running",
 		"already.b":         "Look for the icon in the menu bar (on Windows - by the clock, maybe under the ^ arrow).",
 	},
 }
@@ -497,23 +488,4 @@ func Notification(e guard.Event) (title, body string, ok bool) {
 // seen lists every address the IP services reported.
 func seen(e guard.Event) string {
 	return strings.Join(append([]string{e.IP}, e.Others...), ", ")
-}
-
-// TelegramText is the alert for the Kordon bot: the notification text without
-// addresses (they don't go to the Efimov Dev service), with a status mark.
-func TelegramText(e guard.Event) (string, bool) {
-	title, body, ok := Notification(e)
-	if !ok {
-		return "", false
-	}
-	mark := map[guard.EventKind]string{
-		guard.EvFrozen: "🟠", guard.EvBlocked: "🔴", guard.EvKilledNew: "🔴",
-		guard.EvResumed: "🟢", guard.EvUnblocked: "🟢", guard.EvDNSLeak: "⚠️",
-	}[e.Kind]
-	if mark == "" {
-		return "", false // first-run and "allowed by you" events aren't alerts
-	}
-	body = app.Mask(body)
-	body = strings.NewReplacer("x.x.x.x, ", "", "x:x::x, ", "", "x.x.x.x", "-", "x:x::x", "-").Replace(body)
-	return mark + " " + title + "\n" + body, true
 }

@@ -14,7 +14,7 @@ import (
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 
-	"github.com/ef1m03/kordon/internal/guard"
+	"perimeter/internal/guard"
 )
 
 // Tone is the colour of the icon.
@@ -154,43 +154,87 @@ func ICO(imgs ...*image.NRGBA) []byte {
 }
 
 // AppIcon is the big icon for the .app bundle, the .exe and the README.
-func AppIcon(n int) *image.NRGBA {
+func AppIcon(n int) *image.NRGBA { return Logo(n, Green) }
+
+// Logo is the Perimeter mark, drawn on a 100x100 grid: a blue tile (80x80,
+// corner 18) with a dashed perimeter - eight dashes, one on every corner and
+// side centre - around a dot. Gray is the browser extension's "off" look.
+func Logo(n int, t Tone) *image.NRGBA {
+	top, bottom := color.NRGBA{0x2f, 0x80, 0xff, 0xff}, color.NRGBA{0x17, 0x64, 0xe6, 0xff}
+	if t == Gray {
+		top, bottom = color.NRGBA{0xa1, 0xa1, 0xaa, 0xff}, color.NRGBA{0x80, 0x80, 0x89, 0xff}
+	}
 	img := image.NewNRGBA(image.Rect(0, 0, n, n))
-	fn := float64(n)
-	bg := color.NRGBA{0x11, 0x18, 0x27, 0xff}
-	m := fn * 0.09 // macOS icon grid margin
-	fill(img, bg, func(x, y float64) float64 { return roundRectAlpha(x-m, y-m, fn-2*m, fn-2*m, (fn-2*m)*0.225) })
-	// Shield outline with a green dot: "a guarded border". Drawn with 4x4
-	// supersampling; the inner shield is the outer one inset by the stroke width.
-	inShield := func(x, y, cx, top, w, h float64) bool {
-		if y < top || y > top+h {
-			return false
-		}
-		t := (y - top) / h
-		half := w / 2
-		if t > 0.5 {
-			half *= math.Sqrt(math.Max(0, 1-math.Pow((t-0.5)/0.5, 2)))
-		}
-		return math.Abs(x-cx) <= half
-	}
-	sw := fn * 0.05
-	cx, top, w, h := fn/2, fn*0.23, fn*0.46, fn*0.56
-	shield := func(x, y float64) float64 {
-		hit := 0
-		for i := 0; i < 4; i++ {
-			for j := 0; j < 4; j++ {
-				px, py := x-0.5+(float64(i)+0.5)/4, y-0.5+(float64(j)+0.5)/4
-				if inShield(px, py, cx, top, w, h) && !inShield(px, py, cx, top+sw, w-2*sw, h-2.2*sw) {
-					hit++
-				}
+	unit := float64(n) / 100
+	aa := 1 / unit // one pixel in grid units: the width of the anti-aliased edge
+	for py := 0; py < n; py++ {
+		for px := 0; px < n; px++ {
+			x, y := (float64(px)+0.5)/unit, (float64(py)+0.5)/unit
+			body := clamp01(0.5 - sdRoundRect(x, y, 50, 50, 40, 40, 18)/aa)
+			// A soft shadow under the tile, as macOS icons have.
+			shadow := 0.0
+			if d := sdRoundRect(x, y-1.6, 50, 50, 40, 40, 18); d > 0 {
+				shadow = 0.22 * clamp01(1-d/3.5)
+			} else {
+				shadow = 0.22
 			}
+			k := clamp01((y - 10) / 80)
+			c := [3]float64{lerp(top.R, bottom.R, k), lerp(top.G, bottom.G, k), lerp(top.B, bottom.B, k)}
+			mark := clamp01(0.5 - math.Min(fenceDist(x, y)-3, math.Hypot(x-50, y-50)-7)/aa)
+			for i := range c {
+				c[i] += (255 - c[i]) * mark
+			}
+			a := body + shadow*(1-body)
+			if a <= 0 {
+				continue
+			}
+			img.SetNRGBA(px, py, color.NRGBA{
+				uint8(c[0]*body/a + 0.5), uint8(c[1]*body/a + 0.5), uint8(c[2]*body/a + 0.5), uint8(a*255 + 0.5),
+			})
 		}
-		return float64(hit) / 16
 	}
-	fill(img, color.NRGBA{0xe5, 0xe7, 0xeb, 0xff}, shield)
-	fill(img, tones[Green], func(x, y float64) float64 {
-		d := math.Hypot(x-fn/2, y-fn*0.47) - fn*0.085
-		return math.Min(math.Max(0.5-d, 0), 1)
-	})
 	return img
 }
+
+// fenceDist is the distance from (x, y) to the nearest dash centre line. The
+// perimeter is the 46x46 square at 27..73 with corner 13; each dash is 5.5% of
+// its length (8.89 units).
+func fenceDist(x, y float64) float64 {
+	const half = 4.446      // half a dash along a side
+	const span = 4.446 / 13 // half a dash along a corner arc, in radians
+	d := math.Inf(1)
+	for _, s := range [4][4]float64{{50 - half, 27, 50 + half, 27}, {73, 50 - half, 73, 50 + half}, {50 - half, 73, 50 + half, 73}, {27, 50 - half, 27, 50 + half}} {
+		d = math.Min(d, segDist(x, y, s[0], s[1], s[2], s[3]))
+	}
+	for _, c := range [4][3]float64{{40, 40, -0.75 * math.Pi}, {60, 40, -0.25 * math.Pi}, {60, 60, 0.25 * math.Pi}, {40, 60, 0.75 * math.Pi}} {
+		d = math.Min(d, arcDist(x, y, c[0], c[1], 13, c[2], span))
+	}
+	return d
+}
+
+func segDist(x, y, x1, y1, x2, y2 float64) float64 {
+	dx, dy := x2-x1, y2-y1
+	t := clamp01(((x-x1)*dx + (y-y1)*dy) / (dx*dx + dy*dy))
+	return math.Hypot(x-(x1+t*dx), y-(y1+t*dy))
+}
+
+// arcDist: distance to the arc of radius r around (cx, cy) spanning mid±span.
+func arcDist(x, y, cx, cy, r, mid, span float64) float64 {
+	diff := math.Remainder(math.Atan2(y-cy, x-cx)-mid, 2*math.Pi)
+	if math.Abs(diff) <= span {
+		return math.Abs(math.Hypot(x-cx, y-cy) - r)
+	}
+	a1, a2 := mid-span, mid+span
+	return math.Min(math.Hypot(x-(cx+r*math.Cos(a1)), y-(cy+r*math.Sin(a1))),
+		math.Hypot(x-(cx+r*math.Cos(a2)), y-(cy+r*math.Sin(a2))))
+}
+
+// sdRoundRect is the signed distance to a rounded rectangle (negative inside).
+func sdRoundRect(x, y, cx, cy, hx, hy, r float64) float64 {
+	qx, qy := math.Abs(x-cx)-hx+r, math.Abs(y-cy)-hy+r
+	return math.Hypot(math.Max(qx, 0), math.Max(qy, 0)) + math.Min(math.Max(qx, qy), 0) - r
+}
+
+func clamp01(v float64) float64 { return math.Min(math.Max(v, 0), 1) }
+
+func lerp(a, b uint8, k float64) float64 { return float64(a) + (float64(b)-float64(a))*k }

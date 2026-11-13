@@ -1,19 +1,17 @@
-Kordon
-Copyright (C) 2026 Efimov Dev - https://efimovdev.ru
+Perimeter
+A kill switch for apps. Licensed under the GNU General Public License v3.0, see LICENSE.
 
-The source code is licensed under the GNU General Public License v3.0, see LICENSE.
-Versions 1.0.0 - 1.2.1 were released under the MIT license and stay available under it.
+Perimeter is a modified version of Kordon:
+  Kordon - Copyright (C) 2026 Efimov Dev - https://efimovdev.ru
+  Source: https://github.com/ef1m03/kordon, commit e01c7c4 (03.11.2026),
+  the last version published under GPL-3.0.
 
-The name "Kordon" and the Kordon logo are not licensed under the GPL. A modified
-version or a fork must use a different name and logo and must not present itself
-as Kordon or as an official build. Official builds come only from
-https://github.com/ef1m03/kordon/releases and carry a GitHub build attestation.
+Changes from Kordon (13.11.2026 and later): renamed to Perimeter with a new logo;
+the Telegram bot, the Efimov Dev cloud service and the user count are removed;
+updates are off unless the build names its own repository; the browser
+extension talks to the app on port 47843. The full history is in git.
 
-Название Kordon и логотип Kordon не входят в лицензию GPL. Изменённая версия или
-форк должны называться иначе, использовать другой логотип и не выдавать себя за
-Kordon или его официальную сборку. Официальные сборки - только с
-https://github.com/ef1m03/kordon/releases, у каждой есть аттестация сборки GitHub.
+Perimeter is not Kordon and is not affiliated with or endorsed by Efimov Dev.
+The name "Kordon" and the Kordon logo belong to Efimov Dev and are not used here
+except to credit the original.
 
-Fonts in internal/ui/panel/fonts: Golos Text (Copyright 2019 The Golos Text Project Authors) and
-Unbounded (Copyright 2022 The Unbounded Project Authors), both under the SIL Open Font License 1.1;
-the license texts are next to the font files.

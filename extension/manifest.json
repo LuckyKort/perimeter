@@ -4,7 +4,6 @@
   "description": "__MSG_desc__",
   "default_locale": "ru",
   "version": "1.0.0",
-  "homepage_url": "https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=extension",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -29,7 +28,7 @@
     "privacy"
   ],
   "host_permissions": [
-    "http://127.0.0.1:47833/*",
+    "http://127.0.0.1:47843/*",
     "https://claude.ai/*",
     "https://*.claude.ai/*",
     "https://chatgpt.com/*",

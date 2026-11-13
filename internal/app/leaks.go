@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/netwatch"
+	"perimeter/internal/config"
+	"perimeter/internal/netwatch"
 )
 
 // LeakReport is a one-off deep check from the panel: every IP service on its

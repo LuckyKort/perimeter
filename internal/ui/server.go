@@ -20,16 +20,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/guard"
-	"github.com/ef1m03/kordon/internal/procs"
+	"perimeter/internal/app"
+	"perimeter/internal/appicon"
+	"perimeter/internal/config"
+	"perimeter/internal/guard"
+	"perimeter/internal/procs"
 )
 
 //go:embed panel
 var panelFiles embed.FS
 
-// Server is the local API behind the Kordon panel. It listens on 127.0.0.1 only,
+// Server is the local API behind the Perimeter panel. It listens on 127.0.0.1 only,
 // and every request needs the random token from panel.json (readable by the user
 // only), so neither another site in a browser nor another user can reach it.
 type Server struct {
@@ -44,9 +45,10 @@ type Server struct {
 
 	news *whatsNew
 
-	tgWaiting bool // a link was opened in Telegram, waiting for the user to press Start
+	leakMu sync.Mutex
 
-	leakMu      sync.Mutex
+	iconMu      sync.Mutex
+	icons       map[string]iconEntry // app id -> its own icon, see appIcon
 	leakRunning bool
 	leakReport  *app.LeakReport
 	first       *onboarding
@@ -54,12 +56,12 @@ type Server struct {
 	addr        string
 }
 
-const cookieName = "kordon"
+const cookieName = "perimeter"
 
 // OnboardingPending: a fresh install that hasn't been through the first setup.
 func (s *Server) OnboardingPending() bool { return s.first != nil && s.first.isPending() }
 
-// PanelInfo is what `kordon panel` reads to find the server.
+// PanelInfo is what `perimeter panel` reads to find the server.
 type PanelInfo struct {
 	URL   string `json:"url"`
 	Token string `json:"token"`
@@ -67,7 +69,7 @@ type PanelInfo struct {
 
 func panelInfoPath() string { return filepath.Join(app.Dir(), "panel.json") }
 
-// ReadPanelInfo returns the address of the running Kordon's panel.
+// ReadPanelInfo returns the address of the running Perimeter's panel.
 func ReadPanelInfo() (PanelInfo, error) {
 	var p PanelInfo
 	b, err := os.ReadFile(panelInfoPath())
@@ -103,6 +105,7 @@ func (s *Server) Start(ctx context.Context) error {
 	mux.HandleFunc("GET /api/state", s.state)
 	mux.HandleFunc("GET /api/countries", func(w http.ResponseWriter, _ *http.Request) { writeJSON(w, countryList()) })
 	mux.HandleFunc("POST /api/do", s.do)
+	mux.HandleFunc("GET /api/icon/{id}", s.icon)
 
 	srv := &http.Server{Handler: s.guardRequest(mux), ReadHeaderTimeout: 5 * time.Second}
 	go func() {
@@ -130,7 +133,7 @@ func (s *Server) guardRequest(next http.Handler) http.Handler {
 		}
 		c, err := r.Cookie(cookieName)
 		if err != nil || !s.tokenOK(c.Value) {
-			http.Error(w, "Откройте панель из меню Kordon. Open the panel from the Kordon menu.", http.StatusUnauthorized)
+			http.Error(w, "Откройте панель из меню Perimeter. Open the panel from the Perimeter menu.", http.StatusUnauthorized)
 			return
 		}
 		if r.Method == http.MethodPost && r.Header.Get("Origin") != "http://"+s.addr {
@@ -191,6 +194,48 @@ type appJSON struct {
 	Running bool      `json:"running"`
 	Status  string    `json:"status"`
 	Rule    *ruleJSON `json:"rule"`
+	Icon    bool      `json:"icon"` // the app's own icon is at /api/icon/{id}
+}
+
+type iconEntry struct {
+	png []byte // nil: the app has no icon here
+	at  time.Time
+}
+
+// appIcon returns the app's own icon as a 64 px PNG, or nil. Found icons are
+// kept; a miss is retried after a minute, as the app may get installed.
+func (s *Server) appIcon(id string, matchPaths, running []string) []byte {
+	s.iconMu.Lock()
+	e, ok := s.icons[id]
+	s.iconMu.Unlock()
+	if ok && (e.png != nil || time.Since(e.at) < time.Minute) {
+		return e.png
+	}
+	var png []byte
+	if b := appicon.Bundle(matchPaths, running); b != "" {
+		png, _ = appicon.PNG(b, 64)
+	}
+	s.iconMu.Lock()
+	if s.icons == nil {
+		s.icons = map[string]iconEntry{}
+	}
+	s.icons[id] = iconEntry{png: png, at: time.Now()}
+	s.iconMu.Unlock()
+	return png
+}
+
+// icon serves an icon found by appIcon; the state says which apps have one.
+func (s *Server) icon(w http.ResponseWriter, r *http.Request) {
+	s.iconMu.Lock()
+	png := s.icons[r.PathValue("id")].png
+	s.iconMu.Unlock()
+	if png == nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "private, max-age=3600") // the page re-renders every second
+	_, _ = w.Write(png)
 }
 
 func panelStatus(s guard.Snapshot) string {
@@ -205,8 +250,12 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 	snap := s.G.Snapshot(now)
 	cfg := snap.Config
 	running := map[string]bool{}
+	runPaths := map[string][]string{}
 	for _, p := range snap.Running {
 		running[p.AppID] = true
+		if p.Path != "" {
+			runPaths[p.AppID] = append(runPaths[p.AppID], p.Path)
+		}
 	}
 	groupStatus := map[string]string{}
 	for _, gr := range snap.Groups {
@@ -217,7 +266,8 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 	}
 	var apps []appJSON
 	for _, p := range procs.Presets {
-		a := appJSON{ID: p.ID, Name: p.Name, Browser: p.Browser, Enabled: slices.Contains(cfg.Apps, p.ID), Running: running[p.ID], Status: groupStatus[p.Name]}
+		a := appJSON{ID: p.ID, Name: p.Name, Browser: p.Browser, Enabled: slices.Contains(cfg.Apps, p.ID), Running: running[p.ID], Status: groupStatus[p.Name],
+			Icon: s.appIcon(p.ID, p.Rule().Paths, runPaths[p.ID]) != nil}
 		if r, ok := cfg.AppRules[p.ID]; ok {
 			rj := ruleOf(r)
 			a.Rule = &rj
@@ -226,7 +276,8 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 	}
 	for _, c := range cfg.CustomApps {
 		id := strings.ToLower(c.Name)
-		a := appJSON{ID: id, Name: c.Name, Custom: true, Match: c.Match, Enabled: true, Running: running[id], Status: groupStatus[c.Name]}
+		a := appJSON{ID: id, Name: c.Name, Custom: true, Match: c.Match, Enabled: true, Running: running[id], Status: groupStatus[c.Name],
+			Icon: s.appIcon(id, procs.ParseMatch(c.Match).Paths, runPaths[id]) != nil}
 		if r, ok := cfg.AppRules[id]; ok {
 			rj := ruleOf(r)
 			a.Rule = &rj
@@ -262,7 +313,7 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 		}
 	}
 	writeJSON(w, map[string]any{
-		"lang": Lang, "goos": runtime.GOOS, "version": s.Version, "studioUrl": app.StudioURL,
+		"lang": Lang, "goos": runtime.GOOS, "version": s.Version, "repoUrl": app.RepoURL(),
 		"status": panelStatus(snap), "statusText": StatusLine(snap), "reason": reasonKey(snap.Reason), "reasonText": reasonText(snap.Reason),
 		"graceLeft": int(snap.GraceLeft.Seconds()), "paused": snap.Paused(), "pausedUntil": pausedUntil,
 		"ip": snap.IP, "country": countryOf(snap.Country), "ip6": snap.IP6, "country6": countryOf(snap.Country6),
@@ -275,7 +326,7 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 			"check_interval": int(cfg.CheckInterval.D().Seconds()), "min_agree": cfg.MinAgree,
 			"freeze_on_network_change": cfg.FreezeOnNetworkChange, "block_when_offline": cfg.BlockWhenOffline,
 			"check_ipv6": cfg.CheckIPv6, "dns_check": cfg.DNSCheck, "notifications": cfg.Notifications,
-			"menubar": cfg.MenuBar, "update_check": cfg.UpdateCheck, "language": cfg.Language, "usage_ping": cfg.UsagePing,
+			"menubar": cfg.MenuBar, "update_check": cfg.UpdateCheck, "language": cfg.Language,
 		},
 		"autostart":  app.AutostartEnabled(),
 		"stats":      map[string]any{"days": s.Stats.Last(14, now), "total": s.Stats.Total(), "session": snap.Counters},
@@ -285,45 +336,9 @@ func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 		"whatsNew":   map[string]any{"version": newsVer, "notes": newsNotes},
 		"notes":      CurrentNotes(s.Version),
 		"onboarding": map[string]any{"pending": s.first.isPending(), "suggest": s.first.suggest(cfg)},
-		"usagePing":  cfg.UsagePing,
 		"leaks":      s.leaks(),
-		"telegram":   map[string]bool{"linked": app.TG.IsLinked(), "waiting": s.waitingTG()},
 		"paths":      map[string]string{"config": app.ConfigPath(), "log": app.LogPath()},
 	})
-}
-
-// watchTG asks the service every few seconds whether the user pressed Start in the bot.
-func (s *Server) watchTG() {
-	s.leakMu.Lock()
-	if s.tgWaiting {
-		s.leakMu.Unlock()
-		return
-	}
-	s.tgWaiting = true
-	s.leakMu.Unlock()
-	go func() {
-		defer func() {
-			s.leakMu.Lock()
-			s.tgWaiting = false
-			s.leakMu.Unlock()
-		}()
-		for i := 0; i < 60; i++ { // 3 minutes
-			time.Sleep(3 * time.Second)
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			linked := app.TG.Refresh(ctx)
-			cancel()
-			if linked {
-				app.TG.Send(T("tg.hello"))
-				return
-			}
-		}
-	}()
-}
-
-func (s *Server) waitingTG() bool {
-	s.leakMu.Lock()
-	defer s.leakMu.Unlock()
-	return s.tgWaiting
 }
 
 // checkLeaks runs the deep check in the background; the panel polls the state.
@@ -465,7 +480,7 @@ func (s *Server) apply(a action) error {
 	case "report":
 		return app.OpenURL(app.ReportURL(s.Version))
 	case "open_url":
-		if a.Value == app.RepoURL || a.Value == app.StudioURL || a.Value == app.TelegramURL || strings.HasPrefix(a.Value, app.RepoURL+"/") {
+		if repo := app.RepoURL(); repo != "" && (a.Value == repo || strings.HasPrefix(a.Value, repo+"/")) {
 			return app.OpenURL(a.Value)
 		}
 		return errors.New("unknown link")
@@ -474,30 +489,7 @@ func (s *Server) apply(a action) error {
 		// apps wait until the VPN is on and its IP is allowed instead.
 		g.Update(now, func(c *config.Config) { c.Allow = config.Allow{} })
 	case "onboard_done":
-		if a.Value == "on" || a.Value == "off" {
-			g.Update(now, func(c *config.Config) { c.UsagePing = a.Value })
-		}
 		s.first.finish()
-	case "usage_ping":
-		if a.Value != "on" && a.Value != "off" {
-			return errors.New("usage_ping: on or off")
-		}
-		g.Update(now, func(c *config.Config) { c.UsagePing = a.Value })
-	case "tg_link":
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-		u, err := app.TG.Link(ctx)
-		if err != nil {
-			return errors.New(T("panel.err.tg"))
-		}
-		s.watchTG()
-		return app.OpenURL(u)
-	case "tg_unlink":
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-		app.TG.Unlink(ctx)
-	case "tg_test":
-		app.TG.Send(T("tg.test"))
 	case "check_leaks":
 		s.checkLeaks(s.G.Snapshot(now).Config)
 	case "dismiss_whatsnew":
@@ -620,7 +612,6 @@ func (s *Server) settings(now time.Time, raw json.RawMessage) error {
 		}
 		for k, allowed := range map[string][]string{
 			"dns_check": {"warn", "block", "off"}, "menubar": {"ip", "country", "icon"}, "language": {"auto", "ru", "en"},
-			"usage_ping": {"ask", "on", "off"},
 		} {
 			if v, ok := m[k].(string); ok {
 				if !slices.Contains(allowed, v) {
@@ -632,8 +623,6 @@ func (s *Server) settings(now time.Time, raw json.RawMessage) error {
 					c.DNSCheck = v
 				case "menubar":
 					c.MenuBar = v
-				case "usage_ping":
-					c.UsagePing = v
 				case "language":
 					c.Language = v
 					Lang = app.Language(v)

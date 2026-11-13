@@ -8,9 +8,9 @@ import (
 
 func TestReplaceExe(t *testing.T) {
 	dir := t.TempDir()
-	exe := filepath.Join(dir, "kordon.exe")
+	exe := filepath.Join(dir, "perimeter.exe")
 	os.WriteFile(exe, []byte("old"), 0o755)
-	fresh := filepath.Join(t.TempDir(), "kordon-windows-amd64.exe")
+	fresh := filepath.Join(t.TempDir(), "perimeter-windows-amd64.exe")
 	os.WriteFile(fresh, []byte("new"), 0o755)
 	if _, err := replace(exe, fresh, dir); err != nil {
 		t.Fatal(err)

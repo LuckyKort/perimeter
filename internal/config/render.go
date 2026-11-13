@@ -13,22 +13,20 @@ var CommentLang = "ru"
 
 type tpl struct {
 	rules, trusted, dns string
-	header, apps, appsList, custom, allow, ips, countries, ping,
+	header, apps, appsList, custom, allow, ips, countries,
 	freeze, offline, grace, closeT, interval, services, agree, ipv6, services6, menubar, update, lang, notify string
 }
 
 var templates = map[string]tpl{
 	"ru": {
 		rules:   "# Свои правила для отдельных приложений вместо общих allow. Ключ - id из apps\n# или имя своего приложения. Пример:\n#   cursor:\n#     countries: [NL, DE, US]",
-		trusted: "# Доверенные сети: здесь приложения работают без проверки IP (дом, офис).\n# Сеть узнаётся по её роутеру. Проще добавлять из панели Kordon: «Доверять этой сети».",
+		trusted: "# Доверенные сети: здесь приложения работают без проверки IP (дом, офис).\n# Сеть узнаётся по её роутеру. Проще добавлять из панели Perimeter: «Доверять этой сети».",
 		dns:     "# Утечка DNS (запросы к сайтам идут мимо VPN): warn - предупредить,\n# block - заморозить, как при чужом IP, off - не проверять.",
-		header: "# Kordon - настройки. Сохраните файл, и Kordon подхватит изменения сам, перезапуск не нужен.\n" +
-			"# Справка: https://github.com/ef1m03/kordon#настройки",
+		header:  "# Perimeter - настройки. Сохраните файл, и Perimeter подхватит изменения сам, перезапуск не нужен.",
 		apps: "# Какие приложения защищать. Готовые: claude, chatgpt, codex, cursor, windsurf,\n" +
 			"# copilot, gemini, perplexity, telegram, discord, slack, zoom.\n" +
 			"# Браузеры (замирают целиком, со всеми вкладками): chrome, yandex, edge, brave, firefox.",
-		appsList: "# Список и как их ищет Kordon - в панели на странице «Приложения».",
-		ping:     "# Счётчик пользователей Kordon: on - раз в день отправлять номер версии и систему,\n# без IP и без номера установки; off - не отправлять; ask - спросить в окне Kordon.",
+		appsList: "# Список и как их ищет Perimeter - в панели на странице «Приложения».",
 		custom: "# Свои приложения. match - имя файла (myapp, myapp.exe) или часть пути (/MyApp.app/),\n" +
 			"# для скриптов - часть командной строки с префиксом args: (args:my-cli.js).\n" +
 			"# Пример:\n#   - name: My App\n#     match: [\"/MyApp.app/\", \"myapp.exe\"]",
@@ -52,15 +50,13 @@ var templates = map[string]tpl{
 	},
 	"en": {
 		rules:   "# Per-app rules instead of the shared allow list. The key is an id from apps\n# or a custom app's name. Example:\n#   cursor:\n#     countries: [NL, DE, US]",
-		trusted: "# Trusted networks: apps run here without the IP check (home, office).\n# A network is recognised by its router. Easier from the Kordon panel: \"Trust this network\".",
+		trusted: "# Trusted networks: apps run here without the IP check (home, office).\n# A network is recognised by its router. Easier from the Perimeter panel: \"Trust this network\".",
 		dns:     "# DNS leaks (lookups bypass the VPN): warn - notify, block - freeze like a\n# foreign IP, off - don't check.",
-		header: "# Kordon settings. Save the file and Kordon picks the changes up, no restart needed.\n" +
-			"# Docs: https://github.com/ef1m03/kordon/blob/main/README.en.md#settings",
+		header:  "# Perimeter settings. Save the file and Perimeter picks the changes up, no restart needed.",
 		apps: "# Which apps to protect. Built-in: claude, chatgpt, codex, cursor, windsurf,\n" +
 			"# copilot, gemini, perplexity, telegram, discord, slack, zoom.\n" +
 			"# Browsers (frozen whole, with every tab): chrome, yandex, edge, brave, firefox.",
-		appsList: "# See the Apps page of the Kordon panel for how each one is matched.",
-		ping:     "# Kordon's user count: on - once a day send the version and the OS, with no IP\n# and no install id; off - don't; ask - ask in the Kordon window.",
+		appsList: "# See the Apps page of the Perimeter panel for how each one is matched.",
 		custom: "# Your own apps. match is a file name (myapp, myapp.exe) or part of a path (/MyApp.app/),\n" +
 			"# for scripts - part of the command line prefixed with args: (args:my-cli.js).\n" +
 			"# Example:\n#   - name: My App\n#     match: [\"/MyApp.app/\", \"myapp.exe\"]",
@@ -174,7 +170,6 @@ func Render(c *Config) string {
 	fmt.Fprintf(&b, "%s\nipv6_services:%s\n\n", t.services6, list(c.IPv6Services))
 	fmt.Fprintf(&b, "%s\nmenubar: %s\n\n", t.menubar, c.MenuBar)
 	fmt.Fprintf(&b, "%s\nupdate_check: %t\n\n", t.update, c.UpdateCheck)
-	fmt.Fprintf(&b, "%s\nusage_ping: %s\n\n", t.ping, c.UsagePing)
 	fmt.Fprintf(&b, "%s\nlanguage: %s\n\n", t.lang, c.Language)
 	fmt.Fprintf(&b, "%s\nnotifications: %t\n", t.notify, c.Notifications)
 	return b.String()

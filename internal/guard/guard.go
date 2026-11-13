@@ -1,4 +1,4 @@
-// Package guard is Kordon's core: it decides when the protected apps may run.
+// Package guard is Perimeter's core: it decides when the protected apps may run.
 //
 //	Starting ──first check──▶ OK ◀───────── allowed IP ──────────┐
 //	                           │                                 │
@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/procs"
+	"perimeter/internal/config"
+	"perimeter/internal/procs"
 )
 
 type Status int
@@ -61,7 +61,7 @@ const (
 	historyLen = 50
 )
 
-// Forever pauses until Kordon restarts.
+// Forever pauses until Perimeter restarts.
 const Forever = time.Duration(1<<63 - 1)
 
 type ProbeResult struct {
@@ -138,7 +138,7 @@ type Guard struct {
 	lastKey  string
 }
 
-// Counters are totals since Kordon started, for the statistics.
+// Counters are totals since Perimeter started, for the statistics.
 type Counters struct {
 	Freezes, Saves, Blocks, Killed int
 	FrozenSeconds                  float64
@@ -368,7 +368,7 @@ func (g *Guard) HandleProbe(now time.Time, r ProbeResult) {
 	g.dns, g.dnsCC = r.DNS, r.DNSCountry
 
 	if g.cfg.Allow.IsEmpty() {
-		// First run: whatever network the user installed Kordon on is the right one.
+		// First run: whatever network the user installed Perimeter on is the right one.
 		g.cfg.Allow.AddIP(r.IP)
 		if r.IP6 != "" {
 			g.cfg.Allow.AddIP(r.IP6)
@@ -562,7 +562,7 @@ func (g *Guard) enforce(now time.Time) {
 	}
 
 	if !g.recovered {
-		// If Kordon crashed while apps were frozen, they would stay frozen forever.
+		// If Perimeter crashed while apps were frozen, they would stay frozen forever.
 		g.recovered = true
 		for _, p := range list {
 			_ = g.d.Procs.Resume(p)
@@ -699,7 +699,7 @@ func (g *Guard) AllowCurrentCountry(now time.Time) bool {
 	return true
 }
 
-// TrustCurrentNetwork marks the local network Kordon is on as trusted.
+// TrustCurrentNetwork marks the local network Perimeter is on as trusted.
 func (g *Guard) TrustCurrentNetwork(now time.Time, name string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()

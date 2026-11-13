@@ -1,4 +1,4 @@
-// Package update checks GitHub for a newer Kordon and installs it on request.
+// Package update checks GitHub for a newer Perimeter and installs it on request.
 //
 // Nothing is installed silently: the menu offers the update and the user clicks.
 // The downloaded file is checked against the release's SHA256SUMS.txt.
@@ -21,10 +21,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/netwatch"
+	"perimeter/internal/app"
+	"perimeter/internal/netwatch"
 )
 
-const latestURL = "https://api.github.com/repos/ef1m03/kordon/releases/latest"
+// ErrDisabled: this build has no update source (app.Repo is empty), so it
+// never downloads anything, the original app included.
+var ErrDisabled = errors.New("updates are off in this build")
 
 // Release is the part of GitHub's release JSON that matters here.
 type Release struct {
@@ -85,17 +88,20 @@ func Newer(current, latest string) bool {
 func AssetName(goos, goarch string) string {
 	switch goos {
 	case "darwin":
-		return "Kordon-macos.zip"
+		return "Perimeter-macos.zip"
 	case "windows":
-		return "kordon-windows-" + goarch + ".exe"
+		return "perimeter-windows-" + goarch + ".exe"
 	}
-	return "kordon-linux-" + goarch + ".tar.gz"
+	return "perimeter-linux-" + goarch + ".tar.gz"
 }
 
 // Latest asks GitHub for the newest release.
 func Latest(ctx context.Context) (Release, error) {
 	var r Release
-	req, _ := http.NewRequestWithContext(ctx, "GET", latestURL, nil)
+	if app.Repo == "" {
+		return r, ErrDisabled
+	}
+	req, _ := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/"+app.Repo+"/releases/latest", nil)
 	req.Header.Set("Accept", "application/vnd.github+json")
 	resp, err := netwatch.HTTPClient(15 * time.Second).Do(req)
 	if err != nil {
@@ -213,7 +219,7 @@ func Install(ctx context.Context, r Release, progress Progress) (restart func() 
 		return nil, err
 	}
 	exe, _ = filepath.EvalSymlinks(exe)
-	dir, err := os.MkdirTemp("", "kordon-update-")
+	dir, err := os.MkdirTemp("", "perimeter-update-")
 	if err != nil {
 		return nil, err
 	}

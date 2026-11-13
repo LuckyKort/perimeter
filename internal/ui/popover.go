@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/app"
+	"perimeter/internal/app"
 )
 
-// popover drives `kordon popover`, the tray window. The process starts with the
+// popover drives `perimeter popover`, the tray window. The process starts with the
 // tray and keeps the window loaded but hidden, so a click shows it at once.
 type popover struct {
 	mu    sync.Mutex
@@ -29,7 +29,7 @@ func (p *popover) start() error {
 		return err
 	}
 	cmd := exec.Command(exe, "popover")
-	cmd.Env = append(os.Environ(), "KORDON_CHILD=1")
+	cmd.Env = append(os.Environ(), "PERIMETER_CHILD=1")
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		return err

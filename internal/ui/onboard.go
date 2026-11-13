@@ -7,14 +7,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/procs"
+	"perimeter/internal/app"
+	"perimeter/internal/config"
+	"perimeter/internal/procs"
 )
 
 // onboarding is the first setup on a fresh install, shown once in the tray
 // window: is the current IP the VPN's, which running apps to protect, and
-// whether to be counted among Kordon's users.
+// whether to be counted among Perimeter's users.
 type onboarding struct {
 	mu      sync.Mutex
 	pending bool
@@ -30,7 +30,7 @@ type appRef struct {
 func onboardPath() string { return filepath.Join(app.Dir(), "onboarded") }
 
 // newOnboarding must run before the first state.json is written, like newWhatsNew:
-// someone who already used Kordon doesn't go through the first setup.
+// someone who already used Perimeter doesn't go through the first setup.
 func newOnboarding() *onboarding {
 	o := &onboarding{}
 	if _, err := os.Stat(onboardPath()); err == nil {

@@ -20,16 +20,16 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
-      - run: VERSION=${GITHUB_REF_NAME} ./scripts/build-mac.sh
+      - run: VERSION=${GITHUB_REF_NAME} REPO=${GITHUB_REPOSITORY} ./scripts/build-mac.sh
       # Signed build provenance: anyone can check a file was built here, from this commit:
-      #   gh attestation verify <file> --repo ef1m03/kordon
+      #   gh attestation verify <file> --repo LuckyKort/perimeter
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: dist/Kordon-macos.zip
+          subject-path: dist/Perimeter-macos.zip
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: macos
-          path: dist/Kordon-macos.zip
+          path: dist/Perimeter-macos.zip
 
   windows-linux:
     runs-on: ubuntu-latest
@@ -42,30 +42,30 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
-      - run: VERSION=${GITHUB_REF_NAME} ./scripts/build-windows.sh
+      - run: VERSION=${GITHUB_REF_NAME} REPO=${GITHUB_REPOSITORY} ./scripts/build-windows.sh
       - name: Linux
         run: |
           for arch in amd64 arm64; do
             CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath \
-              -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o kordon ./cmd/kordon
-            tar -czf dist/kordon-linux-$arch.tar.gz kordon
+              -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v} -X perimeter/internal/app.Repo=${GITHUB_REPOSITORY}" -o perimeter ./cmd/perimeter
+            tar -czf dist/perimeter-linux-$arch.tar.gz perimeter
           done
       - run: ./scripts/build-extension.sh
       # Signed build provenance: anyone can check a file was built here, from this commit:
-      #   gh attestation verify <file> --repo ef1m03/kordon
+      #   gh attestation verify <file> --repo LuckyKort/perimeter
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
             dist/*.exe
             dist/*.tar.gz
-            dist/kordon-extension.zip
+            dist/perimeter-extension.zip
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-linux
           path: |
             dist/*.exe
             dist/*.tar.gz
-            dist/kordon-extension.zip
+            dist/perimeter-extension.zip
 
   release:
     needs: [macos, windows-linux]
@@ -85,4 +85,4 @@ jobs:
           cp scripts/install.sh scripts/install.ps1 dist/
           (cd dist && sha256sum * > SHA256SUMS.txt)
           ./scripts/release-notes.sh "$GITHUB_REF_NAME" > notes.md
-          gh release create "$GITHUB_REF_NAME" dist/* --title "Kordon ${GITHUB_REF_NAME}" --notes-file notes.md
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Perimeter ${GITHUB_REF_NAME}" --notes-file notes.md

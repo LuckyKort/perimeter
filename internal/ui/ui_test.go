@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"image/png"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/guard"
+	"perimeter/internal/config"
+	"perimeter/internal/guard"
 )
 
 func TestMessagesComplete(t *testing.T) {
@@ -77,16 +76,5 @@ func TestICO(t *testing.T) {
 	}
 	if _, err := png.Decode(bytes.NewReader(Dot(Amber))); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestTelegramTextHasNoAddresses(t *testing.T) {
-	e := guard.Event{Kind: guard.EvFrozen, Reason: guard.IPNotAllowed, IP: "95.24.1.1", Country: "DE", Apps: []string{"Claude"}, Dur: 20 * time.Second, Notify: true}
-	msg, ok := TelegramText(e)
-	if !ok || strings.Contains(msg, "95.24") || !strings.HasPrefix(msg, "🟠") {
-		t.Fatalf("%q", msg)
-	}
-	if _, ok := TelegramText(guard.Event{Kind: guard.EvAutoAllowed, IP: "1.2.3.4", Notify: true}); ok {
-		t.Fatal("first-run event sent to Telegram")
 	}
 }

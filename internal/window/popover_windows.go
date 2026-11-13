@@ -116,7 +116,7 @@ var pop *winPop
 
 func init() { runtime.LockOSThread() } // the window and its messages live on the main thread
 
-// Popover runs the tray window until cmds closes (Kordon has exited).
+// Popover runs the tray window until cmds closes (Perimeter has exited).
 func Popover(url string, cmds io.Reader) error {
 	p := &winPop{height: 420}
 	pop = p
@@ -179,12 +179,12 @@ func Popover(url string, cmds io.Reader) error {
 func (p *winPop) create() error {
 	var inst windows.Handle
 	_ = windows.GetModuleHandleEx(0, nil, &inst)
-	cls, _ := windows.UTF16PtrFromString("KordonPopover")
+	cls, _ := windows.UTF16PtrFromString("PerimeterPopover")
 	wc := wndClassEx{Style: csDropShadow, WndProc: windows.NewCallback(wndProc), Instance: inst, ClassName: cls}
 	wc.Size = uint32(unsafe.Sizeof(wc))
 	pRegisterClassEx.Call(uintptr(unsafe.Pointer(&wc)))
-	title, _ := windows.UTF16PtrFromString("Kordon")
-	// Created off-screen and hidden: nothing flashes when Kordon starts.
+	title, _ := windows.UTF16PtrFromString("Perimeter")
+	// Created off-screen and hidden: nothing flashes when Perimeter starts.
 	p.hwnd, _, _ = pCreateWindowEx.Call(wsExToolWindow|wsExTopmost, uintptr(unsafe.Pointer(cls)), uintptr(unsafe.Pointer(title)),
 		wsPopup, uintptr(^uint32(31999)), uintptr(^uint32(31999)), popW, uintptr(p.height), 0, 0, uintptr(inst), 0)
 	if p.hwnd == 0 {
@@ -197,7 +197,7 @@ func (p *winPop) create() error {
 		dark := uint32(1)
 		pDwmSetWindowAttr.Call(p.hwnd, 20, uintptr(unsafe.Pointer(&dark)), 4)
 	}
-	dir := filepath.Join(os.Getenv("LOCALAPPDATA"), "Kordon", "popover-webview")
+	dir := filepath.Join(os.Getenv("LOCALAPPDATA"), "Perimeter", "popover-webview")
 	p.web = edge.NewChromium()
 	p.web.DataPath = dir
 	p.web.MessageCallback = p.message
@@ -264,7 +264,7 @@ func (p *winPop) place() (x, y, w, h int32) {
 	edge := int32(80 * s)
 	switch {
 	case c.X > work.Left+edge && c.X < work.Right-edge && c.Y > work.Top+edge && c.Y < work.Bottom-edge:
-		// Opened by Kordon itself (first start), not by a click on the tray: the corner by the clock.
+		// Opened by Perimeter itself (first start), not by a click on the tray: the corner by the clock.
 		x, y = work.Right-w-g, work.Bottom-h-g
 	case c.Y < work.Top: // taskbar at the top
 		y, p.fromTop = work.Top+g, true
@@ -287,7 +287,7 @@ func (p *winPop) show() {
 	p.shownAt = time.Now()
 	// Backup for the focus check: Windows may refuse to bring us forward.
 	pSetTimer.Call(p.hwnd, 1, 250, 0)
-	p.web.Eval("window.kordonShow && kordonShow()")
+	p.web.Eval("window.perimeterShow && perimeterShow()")
 }
 
 func (p *winPop) hide() {
@@ -297,7 +297,7 @@ func (p *winPop) hide() {
 	pKillTimer.Call(p.hwnd, 1)
 	pShowWindow.Call(p.hwnd, swHide)
 	p.hiddenAt = time.Now()
-	p.web.Eval("window.kordonHide && kordonHide()")
+	p.web.Eval("window.perimeterHide && perimeterHide()")
 }
 
 // resize keeps the edge next to the taskbar in place.
@@ -366,7 +366,7 @@ func wndProc(hwnd, m, wp, lp uintptr) uintptr {
 			}
 			return 0
 		case wmClose:
-			p.hide() // Alt+F4 closes the window, not Kordon
+			p.hide() // Alt+F4 closes the window, not Perimeter
 			return 0
 		}
 	}

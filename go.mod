@@ -1,4 +1,4 @@
-module github.com/ef1m03/kordon
+module perimeter
 
 go 1.26.5
 

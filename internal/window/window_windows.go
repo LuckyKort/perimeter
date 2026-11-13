@@ -16,7 +16,7 @@ func Open(url, _, _, _ string) error {
 	if edge == "" {
 		return errors.New("Microsoft Edge not found")
 	}
-	profile := filepath.Join(os.Getenv("LOCALAPPDATA"), "Kordon", "panel-profile")
+	profile := filepath.Join(os.Getenv("LOCALAPPDATA"), "Perimeter", "panel-profile")
 	cmd := exec.Command(edge, "--app="+url, fmt.Sprintf("--window-size=%d,%d", Width, Height),
 		"--user-data-dir="+profile, "--no-first-run", "--disable-features=Translate")
 	return cmd.Start()

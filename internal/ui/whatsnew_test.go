@@ -4,11 +4,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ef1m03/kordon/internal/app"
+	"perimeter/internal/app"
 )
 
 func TestWhatsNew(t *testing.T) {
-	t.Setenv("KORDON_DIR", t.TempDir())
+	t.Setenv("PERIMETER_DIR", t.TempDir())
+	defer func(c string) { changelog = c }(changelog)
+	changelog = "# Changes\n\n## 1.2.2 - 03.11.2026\n\n- **Two.** Text.\n\n## 1.2.1 - 02.11.2026\n\n- **One.** Text.\n"
 
 	// Fresh install: nothing is "new", and the version is remembered.
 	if v, _ := newWhatsNew("1.2.2").get(); v != "" {

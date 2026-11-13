@@ -3,16 +3,16 @@
 // this keeps track of them and cuts them when the tab pauses. While paused, new
 // fetch / XHR / WebSocket / EventSource calls fail at once.
 (() => {
-  if (window.__kordonPause) return;
+  if (window.__perimeterPause) return;
   let paused = false;
   const controllers = new Set(); // AbortControllers of fetches
   const sockets = new Set(); // WebSockets and EventSources
   const xhrs = new Set();
-  window.__kordonPause = true;
+  window.__perimeterPause = true;
 
   const oFetch = window.fetch;
   window.fetch = function (input, init) {
-    if (paused) return Promise.reject(new TypeError("Kordon: paused, the VPN is off"));
+    if (paused) return Promise.reject(new TypeError("Perimeter: paused, the VPN is off"));
     const ac = new AbortController();
     const sig = (init && init.signal) || (input instanceof Request ? input.signal : null);
     if (sig) {
@@ -58,11 +58,11 @@
   }
 
   window.addEventListener("message", (e) => {
-    if (e.source !== window || !e.data || e.data.source !== "kordon-extension") return;
+    if (e.source !== window || !e.data || e.data.source !== "perimeter-extension") return;
     const was = paused;
     paused = !!e.data.pause;
     if (paused && !was) {
-      controllers.forEach((c) => c.abort(new DOMException("Kordon: paused, the VPN is off", "AbortError")));
+      controllers.forEach((c) => c.abort(new DOMException("Perimeter: paused, the VPN is off", "AbortError")));
       controllers.clear();
       sockets.forEach((s) => s.close());
       sockets.clear();

@@ -1,10 +1,10 @@
-// Asks the Kordon app whether the VPN/IP is right, and pauses AI sites when it
+// Asks the Perimeter app whether the VPN/IP is right, and pauses AI sites when it
 // isn't: network rules block their requests and redirect new page loads to a
 // "paused" page; the content scripts cut open connections and cover the tab.
-// If Kordon isn't running, nothing is blocked (and the icon goes grey).
+// If Perimeter isn't running, nothing is blocked (and the icon goes grey).
 import { enabledSites } from "./sites.js";
 
-const KORDON = "http://127.0.0.1:47833/ext/v1/state";
+const PERIMETER = "http://127.0.0.1:47843/ext/v1/state";
 const RULE_IDS = [1, 2, 3];
 let cache = { at: 0, state: null };
 let applied = null; // the pause state the rules are in now
@@ -12,7 +12,7 @@ let inflight = null;
 
 async function fetchState() {
   try {
-    const r = await fetch(KORDON, { cache: "no-store" });
+    const r = await fetch(PERIMETER, { cache: "no-store" });
     if (!r.ok) throw new Error(r.statusText);
     return { ok: true, ...(await r.json()) };
   } catch {
@@ -28,7 +28,7 @@ export async function state() {
         const s = await fetchState();
         cache = { at: Date.now(), state: s };
         // The tabs pause on their own from the state; a failure in the rules must not stop that.
-        await apply(s).catch((e) => console.warn("Kordon: rules", e.message));
+        await apply(s).catch((e) => console.warn("Perimeter: rules", e.message));
         return s;
       } finally {
         inflight = null;

@@ -7,7 +7,7 @@ package window
 
 // A regular app while the panel is open: Dock icon, ⌘Tab, and an Edit menu,
 // without which ⌘C / ⌘V / ⌘A don't work in the page's text fields.
-static void kordon_setup_app(const char *closeTitle, const char *quitTitle) {
+static void perimeter_setup_app(const char *closeTitle, const char *quitTitle) {
 	[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 	NSMenu *bar = [NSMenu new];
 
@@ -51,7 +51,7 @@ func Open(url, title, closeTitle, quitTitle string) error {
 	ct, qt := C.CString(closeTitle), C.CString(quitTitle)
 	defer C.free(unsafe.Pointer(ct))
 	defer C.free(unsafe.Pointer(qt))
-	w.Dispatch(func() { C.kordon_setup_app(ct, qt) })
+	w.Dispatch(func() { C.perimeter_setup_app(ct, qt) })
 	w.Navigate(url)
 	w.Run()
 	return nil

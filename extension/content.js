@@ -3,8 +3,8 @@
 (() => {
   const ru = !navigator.language.startsWith("en");
   const T = ru
-    ? { t: "Вкладка на паузе", b: "Kordon остановил эту вкладку, пока IP не тот. Как только VPN снова заработает, она продолжит сама - ничего не закрывайте.", why: "Причина" }
-    : { t: "This tab is paused", b: "Kordon stopped this tab while the IP is wrong. Once the VPN is back it carries on by itself - don't close anything.", why: "Reason" };
+    ? { t: "Вкладка на паузе", b: "Perimeter остановил эту вкладку, пока IP не тот. Как только VPN снова заработает, она продолжит сама - ничего не закрывайте.", why: "Причина" }
+    : { t: "This tab is paused", b: "Perimeter stopped this tab while the IP is wrong. Once the VPN is back it carries on by itself - don't close anything.", why: "Reason" };
   let paused = false;
   let host = null;
 
@@ -15,7 +15,7 @@
       return;
     }
     if (!host) {
-      host = document.createElement("kordon-pause");
+      host = document.createElement("perimeter-pause");
       const root = host.attachShadow({ mode: "closed" });
       root.innerHTML = `<style>
         :host { all: initial; }
@@ -31,7 +31,7 @@
         h1 { font-size: 22px; margin: 16px 0 8px; letter-spacing: -.02em; }
         p { margin: 0; color: rgba(255,255,255,.72); }
         .why { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,.5); }
-        </style><div class="wrap"><div class="card"><div class="top"><span class="dot"></span>Kordon</div>
+        </style><div class="wrap"><div class="card"><div class="top"><span class="dot"></span>Perimeter</div>
         <h1>${T.t}</h1><p>${T.b}</p><div class="why"></div></div></div>`;
       host._why = root.querySelector(".why");
       (document.body || document.documentElement).appendChild(host);
@@ -50,7 +50,7 @@
     const want = !!(s && s.ok && s.pause);
     if (want !== paused) {
       paused = want;
-      window.postMessage({ source: "kordon-extension", pause: paused }, "*");
+      window.postMessage({ source: "perimeter-extension", pause: paused }, "*");
     }
     cover(paused, s && s.reason);
   }

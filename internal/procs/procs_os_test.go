@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-// The test binary doubles as the "protected app": with KORDON_HELPER set it
+// The test binary doubles as the "protected app": with PERIMETER_HELPER set it
 // appends a line to a file every 20 ms until killed.
 func TestMain(m *testing.M) {
-	if f := os.Getenv("KORDON_HELPER"); f != "" {
+	if f := os.Getenv("PERIMETER_HELPER"); f != "" {
 		for i := 0; ; i++ {
 			fh, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 			if err == nil {
@@ -35,7 +35,7 @@ func lines(t *testing.T, f string) int {
 func TestRealProcess(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "ticks")
 	cmd := exec.Command(os.Args[0], "-test.run=^$")
-	cmd.Env = append(os.Environ(), "KORDON_HELPER="+out)
+	cmd.Env = append(os.Environ(), "PERIMETER_HELPER="+out)
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}

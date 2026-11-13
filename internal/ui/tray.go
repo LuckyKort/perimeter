@@ -13,11 +13,11 @@ import (
 
 	"fyne.io/systray"
 
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/guard"
-	"github.com/ef1m03/kordon/internal/procs"
-	"github.com/ef1m03/kordon/internal/update"
+	"perimeter/internal/app"
+	"perimeter/internal/config"
+	"perimeter/internal/guard"
+	"perimeter/internal/procs"
+	"perimeter/internal/update"
 )
 
 const (
@@ -50,9 +50,9 @@ type Tray struct {
 	hist                                    []*systray.MenuItem
 	mSettings, mLog, mAutostart             *systray.MenuItem
 	mBar, mBarIP, mBarCountry, mBarIcon     *systray.MenuItem
-	mAbout, mStudio, mQuit                  *systray.MenuItem
+	mAbout, mQuit                           *systray.MenuItem
 	mUpdate, mPanel, mTrust, mDNS, mReport  *systray.MenuItem
-	mOpen                                   *systray.MenuItem // "Open Kordon": the tray window
+	mOpen                                   *systray.MenuItem // "Open Perimeter": the tray window
 	pop                                     *popover
 	latest                                  update.Release
 	installing                              bool
@@ -67,7 +67,7 @@ func (t *Tray) Run() {
 }
 
 func (t *Tray) onReady() {
-	systray.SetTooltip("Kordon")
+	systray.SetTooltip("Perimeter")
 	t.setIcon(guard.Snapshot{Config: config.Default()})
 
 	// On macOS and Windows a click on the icon opens the tray window; the menu
@@ -169,6 +169,9 @@ func (t *Tray) onReady() {
 	t.mSettings = item(T("settings"))
 	t.mLog = item(T("log"))
 	t.mReport = item(T("report"))
+	if app.Repo == "" {
+		t.mReport.Hide() // nowhere to send it
+	}
 	t.mAutostart = itemCheck(T("autostart"), app.AutostartEnabled())
 	t.mBar = item(T("menubar"))
 	t.mBarIP = t.mBar.AddSubMenuItemCheckbox(T("menubar.ip"), "", false)
@@ -176,7 +179,6 @@ func (t *Tray) onReady() {
 	t.mBarIcon = t.mBar.AddSubMenuItemCheckbox(T("menubar.icon"), "", false)
 	sep()
 	t.mAbout = item(T("about", t.Version))
-	t.mStudio = item(T("studio"))
 	sep()
 	t.mQuit = systray.AddMenuItem(T("quit"), "")
 	if compact {
@@ -193,7 +195,7 @@ func (t *Tray) onReady() {
 	t.G.OnChange(t.render)
 	t.render(t.G.Snapshot(time.Now()), nil)
 	go t.loop()
-	if t.UpdateCheck {
+	if t.UpdateCheck && app.Repo != "" {
 		go t.updateLoop()
 	}
 }
@@ -267,9 +269,7 @@ func (t *Tray) loop() {
 		case <-t.quitNow:
 			return
 		case <-t.mAbout.ClickedCh:
-			_ = app.OpenURL(app.RepoURL)
-		case <-t.mStudio.ClickedCh:
-			_ = app.OpenURL(app.StudioURL)
+			OpenPanel("about")
 		case <-t.mQuit.ClickedCh:
 			if t.OnQuit != nil {
 				t.OnQuit()
@@ -348,7 +348,7 @@ func (t *Tray) InstallUpdate() {
 	}
 }
 
-// installUpdate replaces Kordon with the new version and restarts it; true means we're exiting.
+// installUpdate replaces Perimeter with the new version and restarts it; true means we're exiting.
 func (t *Tray) installUpdate() bool {
 	t.mu.Lock()
 	rel := t.latest
@@ -417,9 +417,6 @@ func (t *Tray) render(s guard.Snapshot, evs []guard.Event) {
 		app.Logf("%s", line[strings.Index(line, " ")+2:])
 		if title, body, ok := Notification(e); ok && cfg.Notifications {
 			app.Notify(title, body)
-		}
-		if msg, ok := TelegramText(e); ok {
-			app.TG.Send(msg)
 		}
 	}
 
@@ -570,7 +567,7 @@ func (t *Tray) setIcon(s guard.Snapshot) {
 
 	tip := map[Tone]string{Gray: T("tip.paused"), Green: T("tip.ok"), Amber: T("tip.frozen"), Red: T("tip.blocked")}[tone]
 	if s.Status == guard.Starting && !s.Paused() {
-		tip = "Kordon: " + T("starting")
+		tip = "Perimeter: " + T("starting")
 	}
 	if s.IP != "" && s.Config.MenuBar != "icon" {
 		if s.Config.MenuBar == "country" {
@@ -582,7 +579,7 @@ func (t *Tray) setIcon(s guard.Snapshot) {
 	systray.SetTooltip(tip)
 }
 
-// HeadlessRender logs and notifies without a tray icon (kordon headless).
+// HeadlessRender logs and notifies without a tray icon (perimeter headless).
 func HeadlessRender(s guard.Snapshot, evs []guard.Event) {
 	for _, e := range evs {
 		line := EventLine(e)
@@ -591,9 +588,6 @@ func HeadlessRender(s guard.Snapshot, evs []guard.Event) {
 		if title, body, ok := Notification(e); ok && s.Config.Notifications {
 			app.Notify(title, body)
 		}
-		if msg, ok := TelegramText(e); ok {
-			app.TG.Send(msg)
-		}
 	}
 	app.WriteState(app.State{
 		Status: statusName(s.Status), Line: StatusLine(s), IP: s.IP, Country: s.Country,
@@ -601,13 +595,13 @@ func HeadlessRender(s guard.Snapshot, evs []guard.Event) {
 	})
 }
 
-// OpenPanel starts `kordon panel`, which shows the panel window, on a page ("" - the overview).
+// OpenPanel starts `perimeter panel`, which shows the panel window, on a page ("" - the overview).
 func OpenPanel(page string) {
 	exe, err := os.Executable()
 	if err != nil {
 		return
 	}
 	cmd := exec.Command(exe, "panel", page)
-	cmd.Env = append(os.Environ(), "KORDON_CHILD=1") // the panel needs no supervisor
+	cmd.Env = append(os.Environ(), "PERIMETER_CHILD=1") // the panel needs no supervisor
 	_ = cmd.Start()
 }

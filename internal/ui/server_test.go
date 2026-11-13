@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/guard"
-	"github.com/ef1m03/kordon/internal/procs"
+	"perimeter/internal/app"
+	"perimeter/internal/config"
+	"perimeter/internal/guard"
+	"perimeter/internal/procs"
 )
 
 type noProcs struct{}
@@ -25,7 +25,7 @@ func (noProcs) Close(procs.Proc) error      { return nil }
 func (noProcs) Kill(procs.Proc) error       { return nil }
 
 func startServer(t *testing.T) (*Server, PanelInfo, *guard.Guard) {
-	t.Setenv("KORDON_DIR", t.TempDir())
+	t.Setenv("PERIMETER_DIR", t.TempDir())
 	cfg := config.Default()
 	cfg.Allow.IPs = []string{"64.137.54.87"}
 	g := guard.New(cfg, guard.Deps{Fingerprint: func() string { return "x" }, StartProbe: func(*config.Config) {},

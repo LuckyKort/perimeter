@@ -1,5 +1,5 @@
-// Package kordon holds files from the repository root that the app embeds.
-package kordon
+// Package perimeter holds files from the repository root that the app embeds.
+package perimeter
 
 import _ "embed"
 

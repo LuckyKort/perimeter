@@ -8,13 +8,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/ui"
+	"perimeter/internal/app"
+	"perimeter/internal/ui"
 )
 
-const childEnv = "KORDON_CHILD"
+const childEnv = "PERIMETER_CHILD"
 
-// supervise runs Kordon as a child process and restarts it if it crashes, so a
+// supervise runs Perimeter as a child process and restarts it if it crashes, so a
 // bug can't silently leave the apps unprotected. A clean exit (Quit in the menu,
 // or "already running") ends the supervisor too. Returns false in the child.
 func supervise() bool {
@@ -57,9 +57,9 @@ func supervise() bool {
 		for len(crashes) > 0 && now.Sub(crashes[0]) > time.Minute {
 			crashes = crashes[1:]
 		}
-		app.Logf("Kordon упал (%v), перезапускаю", err)
+		app.Logf("Perimeter упал (%v), перезапускаю", err)
 		if len(crashes) > 5 {
-			app.Logf("Kordon падает слишком часто, останавливаюсь")
+			app.Logf("Perimeter падает слишком часто, останавливаюсь")
 			app.Notify(ui.T("crash.t"), ui.T("crash.b", app.LogPath()))
 			return true
 		}

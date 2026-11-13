@@ -1,5 +1,5 @@
-// The tray window. Kordon's native side keeps this page loaded in a hidden
-// window and calls kordonShow() / kordonHide() when the icon is clicked, so
+// The tray window. Perimeter's native side keeps this page loaded in a hidden
+// window and calls perimeterShow() / perimeterHide() when the icon is clicked, so
 // opening it costs nothing. While shown it polls /api/state once a second.
 "use strict";
 
@@ -7,9 +7,7 @@ const L = {
   ru: {
     ob_t: "Привет! Настроим за минуту", ob_ip: "Я разрешил текущий адрес:", ob_q: "Это адрес VPN?", ob_yes: "Да, это VPN", ob_no: "Нет",
     ob_off: "Тогда включи VPN: как только появится его адрес, нажми «Разрешить этот IP» ниже. До этого программы на паузе.",
-    ob_country: "Разрешить всю страну", ob_apps: "Ещё запущено - защищать?", ob_ping: "Учитывать меня в счётчике пользователей Kordon",
-    ob_ping_d: "Раз в день: только версия и система. Без IP, без номера установки.", ob_done: "Готово",
-    ping_t: "Помочь посчитать пользователей?", ping_d: "Раз в день Kordon отправит только версию и систему. Без IP и без номера установки.", ping_yes: "Да, учитывать", ping_no: "Нет",
+    ob_country: "Разрешить всю страну", ob_apps: "Ещё запущено - защищать?", ob_done: "Готово",
     h_ok: "Защита включена", h_frozen: "Приложения на паузе", h_blocked: "Приложения закрыты", h_starting: "Проверяю IP…",
     h_paused: "Защита на паузе", paused_until: "до", paused_forever: "до перезапуска",
     allowed: "разрешено", not_allowed: "не разрешено", offline: "Нет интернета", checking: "Проверяю…",
@@ -20,17 +18,15 @@ const L = {
     pause: "Пауза", check: "Проверить IP", trust: "Эта сеть\nдоверенная", trusted_a: "Сеть\nдоверенная", panel: "Панель",
     p15: "15 мин", p60: "1 час", pF: "До перезапуска", unpause: "Включить защиту",
     allow_ip: "Разрешить этот IP", allow_country: "Разрешить всю страну", pause15: "Пауза защиты на 15 мин",
-    upd: "Kordon", upd_btn: "Обновить", whats: "Что нового", hide: "Скрыть", installing: "Обновляю до", of: "из", mb: "МБ",
+    upd: "Perimeter", upd_btn: "Обновить", whats: "Что нового", hide: "Скрыть", installing: "Обновляю до", of: "из", mb: "МБ",
     upd_note: "Проверю контрольную сумму и перезапущусь. Защита не выключится.",
     updated: "Обновлено до", all: "Все изменения",
-    open: "Открыть панель →", checked: "Проверяю", trusted_t: "Сеть добавлена в доверенные",
+    open: "Открыть панель →", leaks: "Утечки", checked: "Проверяю", trusted_t: "Сеть добавлена в доверенные",
   },
   en: {
     ob_t: "Hi! A one-minute setup", ob_ip: "I've allowed the current address:", ob_q: "Is this your VPN's address?", ob_yes: "Yes, the VPN", ob_no: "No",
     ob_off: "Then turn the VPN on: once its address shows up, press \"Allow this IP\" below. Until then the apps stay paused.",
-    ob_country: "Allow the whole country", ob_apps: "Also running - protect them?", ob_ping: "Count me among Kordon's users",
-    ob_ping_d: "Once a day: just the version and the OS. No IP, no install id.", ob_done: "Done",
-    ping_t: "Help count Kordon's users?", ping_d: "Once a day Kordon sends only its version and the OS. No IP, no install id.", ping_yes: "Yes, count me", ping_no: "No",
+    ob_country: "Allow the whole country", ob_apps: "Also running - protect them?", ob_done: "Done",
     h_ok: "Protection is on", h_frozen: "Apps are paused", h_blocked: "Apps are closed", h_starting: "Checking IP…",
     h_paused: "Protection paused", paused_until: "until", paused_forever: "until restart",
     allowed: "allowed", not_allowed: "not allowed", offline: "No internet", checking: "Checking…",
@@ -41,10 +37,10 @@ const L = {
     pause: "Pause", check: "Check IP", trust: "Trust this\nnetwork", trusted_a: "Trusted\nnetwork", panel: "Panel",
     p15: "15 min", p60: "1 hour", pF: "Until restart", unpause: "Turn protection on",
     allow_ip: "Allow this IP", allow_country: "Allow the whole country", pause15: "Pause protection for 15 min",
-    upd: "Kordon", upd_btn: "Update", whats: "What's new", hide: "Hide", installing: "Updating to", of: "of", mb: "MB",
+    upd: "Perimeter", upd_btn: "Update", whats: "What's new", hide: "Hide", installing: "Updating to", of: "of", mb: "MB",
     upd_note: "I'll check the checksum and restart. Protection stays on.",
     updated: "Updated to", all: "All changes",
-    open: "Open the panel →", checked: "Checking", trusted_t: "Network added to trusted",
+    open: "Open the panel →", leaks: "Leaks", checked: "Checking", trusted_t: "Network added to trusted",
   },
 };
 
@@ -55,6 +51,7 @@ const ICONS = {
   home: '<path d="M3 11l9-7 9 7v9H3z"/>',
   homeok: '<path d="M3 11l9-7 9 7v9H3z"/><path d="M9 14.5l2 2 4-4"/>',
   play: '<path d="M7 5l12 7-12 7z"/>',
+  shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
 };
 const svg = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -69,7 +66,7 @@ let timer = null, inTimer = null;
 // Native bridge: WKWebView message handler on macOS, bound functions on Windows.
 function native(msg) {
   try {
-    if (window.webkit?.messageHandlers?.kordon) window.webkit.messageHandlers.kordon.postMessage(msg);
+    if (window.webkit?.messageHandlers?.perimeter) window.webkit.messageHandlers.perimeter.postMessage(msg);
     else if (window.chrome?.webview) window.chrome.webview.postMessage(JSON.stringify(msg));
   } catch (_) { /* no native side: opened in a browser for testing */ }
 }
@@ -85,13 +82,21 @@ function country(c) {
   return S.goos === "windows" ? `${esc(c.code)} · ${esc(c.name)}` : `${esc(c.flag)} ${esc(c.name)}`;
 }
 
+// A steady colour per app name: a small app-icon-like tile with the initial.
 function avatar(name) {
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return `background:hsl(${h} 60% 50% / .2);color:hsl(${h} 70% 62%)`;
+  return `background:linear-gradient(145deg,hsl(${h} 75% 62%),hsl(${(h + 28) % 360} 70% 46%))`;
 }
 
-let obAnswer = "", obPing = false;
+// The app's own icon when this computer has the app, else its letter.
+function appAvatar(a) {
+  const full = S.apps.find((x) => x.id === a.id);
+  if (full?.icon) return `<img class="av app-ic" src="/api/icon/${encodeURIComponent(a.id)}" alt="">`;
+  return `<span class="av" style="${avatar(a.name)}">${esc(a.name[0])}</span>`;
+}
+
+let obAnswer = "";
 
 // First start: confirm the auto-allowed IP is the VPN's, offer the running apps, ask about the count.
 function onboardCard() {
@@ -106,21 +111,13 @@ function onboardCard() {
   } else if (obAnswer === "no") {
     q = `<div class="note">${t("ob_off")}</div>`;
   }
-  const sug = (o.suggest || []).map((a) => `<button class="sug" data-op="toggle_app" data-app="${esc(a.id)}"><span class="av" style="${avatar(a.name)}">${esc(a.name[0])}</span>${esc(a.name)} <span>+</span></button>`).join("");
+  const sug = (o.suggest || []).map((a) => `<button class="sug" data-op="toggle_app" data-app="${esc(a.id)}">${appAvatar(a)}${esc(a.name)} <span>+</span></button>`).join("");
   return `<div class="upd ob"><div class="h"><span class="v">${t("ob_t")}</span></div>
     <div class="ob-ip">${t("ob_ip")} ${ip}</div>${q}
     ${sug ? `<div class="ob-l">${t("ob_apps")}</div><div class="apps">${sug}</div>` : ""}
-    <label class="chk"><input type="checkbox" id="obPing" ${obPing ? "checked" : ""}><span><b>${t("ob_ping")}</b><br><small>${t("ob_ping_d")}</small></span></label>
     <div class="b"><button class="btn ${obAnswer ? "pri" : ""}" data-do="ob_done">${t("ob_done")}</button></div></div>`;
 }
 
-// For people who updated from a version without the count: asked once, nothing is sent until they say yes.
-function pingCard() {
-  if (S.usagePing !== "ask" || S.onboarding?.pending) return "";
-  return `<div class="upd ping"><div class="h"><span class="v">${t("ping_t")}</span></div>
-    <div class="note" style="margin:6px 0 10px">${t("ping_d")}</div>
-    <div class="b"><button class="btn pri" data-op="usage_ping" data-value="on">${t("ping_yes")}</button><button class="btn" data-op="usage_ping" data-value="off">${t("ping_no")}</button></div></div>`;
-}
 
 function updateCard() {
   const u = S.updateInfo;
@@ -181,14 +178,14 @@ function apps() {
   const frozen = run.some((a) => a.status === "frozen");
   if (!run.length) {
     const any = S.apps.some((a) => a.enabled);
-    return `<div class="lbl">${t("protect")}</div><div class="none">${any ? t("none") : `${t("none_set")} <button data-panel="apps">${t("choose")}</button>`}</div>`;
+    return `<div class="lbl">${t("protect")}</div><div class="group"><div class="none">${any ? t("none") : `${t("none_set")} <button data-panel="apps">${t("choose")}</button>`}</div></div>`;
   }
   const chip = (a) => {
     const st = a.status === "frozen" ? "frozen" : a.status === "blocked" ? "blocked" : "ok";
-    const label = st === "frozen" ? "❄ " + t("frozen") : st === "blocked" ? t("blocked") : t("running");
-    return `<span class="app ${st}"><span class="av" style="${avatar(a.name)}">${esc(a.name[0])}</span>${esc(a.name)} <span class="s">${label}</span></span>`;
+    const label = st === "frozen" ? t("frozen") : st === "blocked" ? t("blocked") : t("running");
+    return `<div class="app ${st}">${appAvatar(a)}<span class="nm">${esc(a.name)}</span><span class="s">${label}</span></div>`;
   };
-  return `<div class="lbl">${frozen ? t("frozen_l") : t("protect")}</div><div class="apps">${run.map(chip).join("")}</div>`;
+  return `<div class="lbl">${frozen ? t("frozen_l") : t("protect")}</div><div class="group">${run.map(chip).join("")}</div>`;
 }
 
 function actions() {
@@ -200,22 +197,21 @@ function actions() {
       <button class="btn" data-op="pause" data-min="15">${t("pause15")}</button></div>`;
   }
   const third = S.network
-    ? `<button class="act" data-panel="networks">${svg("homeok")}${br(t("trusted_a"))}</button>`
+    ? `<button class="act" data-panel="networks"><i>${svg("homeok")}</i>${br(t("trusted_a"))}</button>`
     : S.netId
-      ? `<button class="act" data-do="trust">${svg("home")}${br(t("trust"))}</button>`
-      : `<button class="act" data-panel="overview">${svg("panel")}${t("panel")}</button>`;
+      ? `<button class="act" data-do="trust"><i>${svg("home")}</i>${br(t("trust"))}</button>`
+      : `<button class="act" data-panel="leaks"><i>${svg("shield")}</i>${t("leaks")}</button>`;
   return `<div class="acts">
-    <button class="act ${pauseOpen ? "on" : ""}" data-do="pause">${svg("pause")}${t("pause")}</button>
-    <button class="act" data-do="check">${svg("check")}${t("check")}</button>
+    <button class="act ${pauseOpen ? "on" : ""}" data-do="pause"><i>${svg("pause")}</i>${t("pause")}</button>
+    <button class="act" data-do="check"><i>${svg("check")}</i>${t("check")}</button>
     ${third}</div>
     ${pauseOpen ? `<div class="chips"><button data-op="pause" data-min="15">${t("p15")}</button><button data-op="pause" data-min="60">${t("p60")}</button><button data-op="pause" data-min="0">${t("pF")}</button></div>` : ""}`;
 }
 
 function render() {
-  const html = `<div class="top"><img src="icon.png" alt=""><b>Kordon</b><span class="sp"></span>
-      <button class="ib" data-panel="overview" title="${t("panel")}">${svg("panel")}</button></div>
-    ${onboardCard() || updateCard() || pingCard()}${hero()}${apps()}${actions()}
-    <div class="foot"><button class="open" data-panel="overview">${t("open")}</button><button class="studio" data-url="${esc(S.studioUrl)}">efimovdev.ru</button></div>`;
+  const html = `<div class="top"><img src="icon.png" alt=""><b>Perimeter</b><span class="sp"></span><span class="ver">${esc(S.version)}</span></div>
+    ${onboardCard() || updateCard()}${hero()}${apps()}${actions()}
+    <div class="foot"><button class="open" data-panel="overview">${t("open")}</button></div>`;
   if (html === lastHTML) return;
   lastHTML = html;
   document.getElementById("pop").innerHTML = html;
@@ -239,7 +235,7 @@ async function refresh() {
     S = await r.json();
     document.documentElement.lang = S.lang;
     render();
-  } catch (_) { /* Kordon is restarting */ }
+  } catch (_) { /* Perimeter is restarting */ }
 }
 
 let toastTimer;
@@ -282,21 +278,20 @@ document.addEventListener("click", async (e) => {
     case "hideupd": hiddenUpdate = S.updateInfo.version; lastHTML = ""; render(); break;
     case "ob_yes": obAnswer = "yes"; lastHTML = ""; render(); break;
     case "ob_no": obAnswer = "no"; await api("onboard_not_vpn"); break;
-    case "ob_done": await api("onboard_done", { value: document.getElementById("obPing")?.checked ? "on" : "off" }); break;
+    case "ob_done": await api("onboard_done"); break;
     case "check": toast(t("checked") + "…"); await api("check_now"); break;
     case "trust": if (await api("trust_network")) toast(t("trusted_t")); break;
   }
 });
 
 document.addEventListener("change", (e) => {
-  if (e.target.id === "obPing") obPing = e.target.checked; // survives the once-a-second re-render
 });
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") native({ op: "hide" });
 });
 
-window.kordonShow = () => {
+window.perimeterShow = () => {
   pauseOpen = false;
   const pop = document.getElementById("pop");
   // The entrance animation plays once per opening, not on every refresh.
@@ -309,7 +304,7 @@ window.kordonShow = () => {
   clearInterval(timer);
   timer = setInterval(refresh, 1000);
 };
-window.kordonHide = () => {
+window.perimeterHide = () => {
   clearInterval(timer);
   timer = null;
 };
@@ -319,4 +314,4 @@ else if (navigator.userAgent.includes("Mac")) document.documentElement.classList
 new ResizeObserver(fit).observe(document.getElementById("pop"));
 refresh();
 // Opened on its own (in a browser while testing): behave as if shown.
-if (!window.webkit?.messageHandlers?.kordon && !window.chrome?.webview) window.kordonShow();
+if (!window.webkit?.messageHandlers?.perimeter && !window.chrome?.webview) window.perimeterShow();

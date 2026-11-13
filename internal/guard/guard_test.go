@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/procs"
+	"perimeter/internal/config"
+	"perimeter/internal/procs"
 )
 
 // fakeProcs records what the guard did to each process.

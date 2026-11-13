@@ -53,7 +53,7 @@ func ReportURL(version string) string {
 		log = log[len(log)-4000:]
 	}
 	body := fmt.Sprintf("**Что случилось**\n\n<!-- опишите, что делали и что пошло не так -->\n\n"+
-		"**Система**\n\nKordon %s · %s/%s\n\n**Журнал** (адреса скрыты)\n\n```\n%s\n```\n",
+		"**Система**\n\nPerimeter %s · %s/%s\n\n**Журнал** (адреса скрыты)\n\n```\n%s\n```\n",
 		version, runtime.GOOS, runtime.GOARCH, log)
-	return RepoURL + "/issues/new?" + url.Values{"title": {""}, "body": {body}}.Encode()
+	return RepoURL() + "/issues/new?" + url.Values{"title": {""}, "body": {body}}.Encode()
 }

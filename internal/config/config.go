@@ -1,4 +1,4 @@
-// Package config reads and writes Kordon's config.yaml.
+// Package config reads and writes Perimeter's config.yaml.
 //
 // The file is meant to be edited by hand, so it is always written back from a
 // commented template (see render.go) instead of a bare yaml.Marshal.
@@ -76,7 +76,6 @@ type Config struct {
 	IPv6Services  []string `yaml:"ipv6_services"`
 	MenuBar       string   `yaml:"menubar"`
 	UpdateCheck   bool     `yaml:"update_check"`
-	UsagePing     string   `yaml:"usage_ping"` // ask, on, off: count me among Kordon's users (anonymous)
 	Language      string   `yaml:"language"`
 	Notifications bool     `yaml:"notifications"`
 }
@@ -110,7 +109,6 @@ func Default() *Config {
 		IPv6Services:          append([]string(nil), DefaultIPv6Services...),
 		MenuBar:               "ip",
 		UpdateCheck:           true,
-		UsagePing:             "ask",
 		Language:              "auto",
 		Notifications:         true,
 	}
@@ -186,11 +184,6 @@ func (c *Config) normalize() error {
 	case "ip", "country", "icon":
 	default:
 		c.MenuBar = "ip"
-	}
-	switch c.UsagePing {
-	case "ask", "on", "off":
-	default:
-		c.UsagePing = "ask"
 	}
 	switch c.Language {
 	case "auto", "ru", "en":

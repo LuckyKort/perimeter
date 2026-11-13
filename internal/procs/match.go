@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ef1m03/kordon/internal/config"
+	"perimeter/internal/config"
 )
 
 // Proc is one running process.
@@ -210,7 +210,7 @@ func Filter(all []Proc, ts []Target, self int) []Proc {
 			children[p.PPID] = append(children[p.PPID], p.PID)
 		}
 	}
-	// Kordon's own children (the panel window: Edge on Windows) are never
+	// Perimeter's own children (the panel window: Edge on Windows) are never
 	// frozen, even when the same app is protected.
 	mine := map[int]bool{}
 	if self > 1 {

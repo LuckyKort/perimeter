@@ -1,8 +1,8 @@
 {
   "name": {
-    "message": "Kordon - pause AI tabs without the VPN"
+    "message": "Perimeter - pause AI tabs without the VPN"
   },
   "desc": {
-    "message": "The VPN dropped - Claude, ChatGPT and other AI tabs pause, the rest of the browser keeps working. Needs the Kordon app."
+    "message": "The VPN dropped - Claude, ChatGPT and other AI tabs pause, the rest of the browser keeps working. Needs the Perimeter app."
   }
 }

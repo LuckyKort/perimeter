@@ -12,11 +12,11 @@ import (
 // replace unpacks the binary next to the running one and renames it over it;
 // Linux keeps the running file alive until the process exits.
 func replace(exe, tgz, dir string) (func() error, error) {
-	if out, err := exec.Command("tar", "-xzf", tgz, "-C", dir, "kordon").CombinedOutput(); err != nil {
+	if out, err := exec.Command("tar", "-xzf", tgz, "-C", dir, "perimeter").CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("распаковка: %v %s", err, out)
 	}
-	tmp := filepath.Join(filepath.Dir(exe), ".kordon-new")
-	b, err := os.ReadFile(filepath.Join(dir, "kordon"))
+	tmp := filepath.Join(filepath.Dir(exe), ".perimeter-new")
+	b, err := os.ReadFile(filepath.Join(dir, "perimeter"))
 	if err != nil {
 		return nil, err
 	}

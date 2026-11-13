@@ -8,16 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/app"
+	"perimeter/internal/app"
 )
 
-// ExtPort is where the Kordon browser extension asks whether AI tabs must
+// ExtPort is where the Perimeter browser extension asks whether AI tabs must
 // pause. A fixed port, because an extension can't read panel.json; it answers
 // one read-only question and only to browser extensions.
-const ExtPort = "47833"
+const ExtPort = "47843"
 
-// StartExt serves GET /ext/v1/state on 127.0.0.1:47833 until ctx ends.
-// A busy port only means the extension can't reach this Kordon.
+// StartExt serves GET /ext/v1/state on 127.0.0.1:47843 until ctx ends.
+// A busy port only means the extension can't reach this Perimeter.
 func (s *Server) StartExt(ctx context.Context) {
 	ln, err := net.Listen("tcp4", "127.0.0.1:"+ExtPort)
 	if err != nil {
@@ -75,8 +75,8 @@ func (s *Server) extState(w http.ResponseWriter, _ *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"kordon": s.Version,
-		"status": st,
+		"perimeter": s.Version,
+		"status":    st,
 		// pause: what the protected apps do right now, the extension does with AI tabs.
 		"pause":   pause,
 		"reason":  why,

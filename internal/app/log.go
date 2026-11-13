@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-const maxLog = 1 << 20 // 1 MB, then the old half goes to kordon.log.1
+const maxLog = 1 << 20 // 1 MB, then the old half goes to perimeter.log.1
 
 var logMu sync.Mutex
 
-// Logf appends a line to kordon.log.
+// Logf appends a line to perimeter.log.
 func Logf(format string, args ...any) {
 	logMu.Lock()
 	defer logMu.Unlock()

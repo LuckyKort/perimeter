@@ -2,26 +2,26 @@ import { DEFAULT_SITES, clean } from "./sites.js";
 
 const ru = !navigator.language.startsWith("en");
 const T = ru ? {
-  ok: "IP в порядке - ИИ-сайты работают", pause: "ИИ-сайты на паузе", none: "Kordon не запущен",
-  noneNote: "Без приложения Kordon 1.3 или новее вкладки не защищены. Запустите или обновите его - efimovdev.ru/kordon.",
+  ok: "IP в порядке - ИИ-сайты работают", pause: "ИИ-сайты на паузе", none: "Perimeter не запущен",
+  noneNote: "Без запущенного приложения Perimeter вкладки не защищены. Запустите его.",
   pauseNote: "Вернутся сами, как только VPN снова заработает.",
   sites: "Что ставить на паузу", extra: "Свои сайты блокируются на уровне сети; открытые вкладки с ними лучше перезагрузить.",
   rtcAbout: "Браузер может показать сайтам ваш настоящий адрес через WebRTC, даже когда весь остальной трафик идёт через VPN или прокси.",
   check: "Проверить", fixOn: "Закрыть утечку", fixOff: "Вернуть как было", checking: "Проверяю…",
   rtcNone: "WebRTC не выдаёт сайтам ни одного адреса. Утечки нет.",
   rtcSame: "WebRTC показывает тот же адрес, что и VPN: ", rtcLeak: "Утечка: WebRTC показывает сайтам адрес ",
-  rtcLeak2: " - он не совпадает с адресом VPN. Нажмите «Закрыть утечку».", rtcUnknown: "WebRTC видит адрес ", rtcUnknown2: ". Запустите Kordon, чтобы сравнить его с IP.",
+  rtcLeak2: " - он не совпадает с адресом VPN. Нажмите «Закрыть утечку».", rtcUnknown: "WebRTC видит адрес ", rtcUnknown2: ". Запустите Perimeter, чтобы сравнить его с IP.",
   fixed: "Готово: WebRTC больше не выдаёт адрес в обход прокси и VPN.",
 } : {
-  ok: "IP is fine - AI sites work", pause: "AI sites are paused", none: "Kordon isn't running",
-  noneNote: "Without the Kordon app 1.3 or newer tabs aren't protected. Start or update it - efimovdev.ru/kordon.",
+  ok: "IP is fine - AI sites work", pause: "AI sites are paused", none: "Perimeter isn't running",
+  noneNote: "Without the Perimeter app running, tabs aren't protected. Start it.",
   pauseNote: "They carry on by themselves once the VPN is back.",
   sites: "What to pause", extra: "Your own sites are blocked at the network level; reload their open tabs.",
   rtcAbout: "A browser can show sites your real address through WebRTC even when all other traffic goes through the VPN or a proxy.",
   check: "Check", fixOn: "Close the leak", fixOff: "Undo", checking: "Checking…",
   rtcNone: "WebRTC gives sites no address at all. No leak.",
   rtcSame: "WebRTC shows the same address as the VPN: ", rtcLeak: "Leak: WebRTC shows sites the address ",
-  rtcLeak2: " - not the VPN's. Press \"Close the leak\".", rtcUnknown: "WebRTC sees the address ", rtcUnknown2: ". Start Kordon to compare it with the IP.",
+  rtcLeak2: " - not the VPN's. Press \"Close the leak\".", rtcUnknown: "WebRTC sees the address ", rtcUnknown2: ". Start Perimeter to compare it with the IP.",
   fixed: "Done: WebRTC no longer gives out an address around the proxy and VPN.",
 };
 const $ = (id) => document.getElementById(id);
@@ -34,7 +34,7 @@ async function renderState() {
   $("stateText").textContent = !S.ok ? T.none : S.pause ? T.pause : T.ok;
   $("ip").textContent = S.ok && S.ip ? `${S.country?.flag || ""} ${S.ip}` : "";
   $("stateNote").textContent = !S.ok ? T.noneNote : S.pause ? (S.reason ? S.reason + ". " : "") + T.pauseNote : "";
-  $("ver").textContent = S.ok ? "Kordon " + S.kordon : "";
+  $("ver").textContent = S.ok ? "Perimeter " + S.perimeter : "";
 }
 
 async function renderSites() {
@@ -114,10 +114,6 @@ $("rtcFix").addEventListener("click", async () => {
 $("hSites").textContent = T.sites;
 $("rtcAbout").textContent = T.rtcAbout;
 $("rtcCheck").textContent = T.check;
-$("studio").addEventListener("click", (e) => {
-  e.preventDefault();
-  chrome.tabs.create({ url: "https://efimovdev.ru/kordon/?utm_source=kordon&utm_medium=extension" });
-});
 renderState();
 renderSites();
 renderFix();

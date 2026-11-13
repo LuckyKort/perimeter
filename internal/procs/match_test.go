@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ef1m03/kordon/internal/config"
+	"perimeter/internal/config"
 )
 
 func TestRuleMatch(t *testing.T) {
@@ -93,12 +93,12 @@ func TestFilterIncludesChildren(t *testing.T) {
 	}
 }
 
-// Kordon's own children (the panel window is Edge on Windows) are never
+// Perimeter's own children (the panel window is Edge on Windows) are never
 // frozen, even when that browser is protected.
 func TestFilterSkipsOwnChildren(t *testing.T) {
 	edge := Rule{Names: []string{"msedge"}}
 	all := []Proc{
-		{PID: 10, PPID: 1, Name: "kordon.exe"},
+		{PID: 10, PPID: 1, Name: "perimeter.exe"},
 		{PID: 11, PPID: 10, Name: "msedge.exe"}, // panel window
 		{PID: 12, PPID: 11, Name: "msedge.exe"}, // its renderer
 		{PID: 20, PPID: 1, Name: "msedge.exe"},  // the user's Edge

@@ -11,24 +11,24 @@ static const CGFloat popWidth = 340;
 
 // A borderless panel that can take the keyboard (Escape, text selection)
 // without activating the app, like the system's own menu bar popovers.
-@interface KordonPanel : NSPanel
+@interface PerimeterPanel : NSPanel
 @end
-@implementation KordonPanel
+@implementation PerimeterPanel
 - (BOOL)canBecomeKeyWindow { return YES; }
 @end
 
-@interface KordonPop : NSObject <NSWindowDelegate, WKScriptMessageHandler, WKNavigationDelegate>
-@property (strong) KordonPanel *panel;
+@interface PerimeterPop : NSObject <NSWindowDelegate, WKScriptMessageHandler, WKNavigationDelegate>
+@property (strong) PerimeterPanel *panel;
 @property (strong) WKWebView *web;
 @property (assign) CFTimeInterval hiddenAt;
 @property (assign) CGFloat height;
 @end
 
-@implementation KordonPop
+@implementation PerimeterPop
 
 - (void)setupWithURL:(NSString *)url {
 	self.height = 420;
-	self.panel = [[KordonPanel alloc] initWithContentRect:NSMakeRect(0, 0, popWidth, self.height)
+	self.panel = [[PerimeterPanel alloc] initWithContentRect:NSMakeRect(0, 0, popWidth, self.height)
 		styleMask:NSWindowStyleMaskBorderless | NSWindowStyleMaskNonactivatingPanel
 		backing:NSBackingStoreBuffered defer:NO];
 	self.panel.level = NSPopUpMenuWindowLevel;
@@ -53,7 +53,7 @@ static const CGFloat popWidth = 340;
 	self.panel.contentView = blur;
 
 	WKWebViewConfiguration *cfg = [WKWebViewConfiguration new];
-	[cfg.userContentController addScriptMessageHandler:self name:@"kordon"];
+	[cfg.userContentController addScriptMessageHandler:self name:@"perimeter"];
 	self.web = [[WKWebView alloc] initWithFrame:blur.bounds configuration:cfg];
 	[self.web setValue:@NO forKey:@"drawsBackground"];
 	self.web.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
@@ -74,7 +74,7 @@ static const CGFloat popWidth = 340;
 	}
 	NSRect vis = screen.visibleFrame;
 	CGFloat x = m.x - popWidth / 2;
-	// Opened by Kordon itself (first start), not by a click: the right corner.
+	// Opened by Perimeter itself (first start), not by a click: the right corner.
 	if (m.y < NSMaxY(screen.frame) - 40) x = NSMaxX(vis) - popWidth - 12;
 	x = MAX(NSMinX(vis) + 8, MIN(x, NSMaxX(vis) - popWidth - 8));
 	CGFloat top = NSMaxY(vis) - 6;
@@ -88,7 +88,7 @@ static const CGFloat popWidth = 340;
 	// and a click anywhere else takes it away, which closes the window.
 	[NSApp activateIgnoringOtherApps:YES];
 	[self.panel makeKeyAndOrderFront:nil];
-	[self.web evaluateJavaScript:@"window.kordonShow && kordonShow()" completionHandler:nil];
+	[self.web evaluateJavaScript:@"window.perimeterShow && perimeterShow()" completionHandler:nil];
 }
 
 - (void)hide {
@@ -96,7 +96,7 @@ static const CGFloat popWidth = 340;
 	[self.panel orderOut:nil];
 	self.hiddenAt = CACurrentMediaTime();
 	if (NSApp.active) [NSApp hide:nil]; // the app you were in gets the focus back
-	[self.web evaluateJavaScript:@"window.kordonHide && kordonHide()" completionHandler:nil];
+	[self.web evaluateJavaScript:@"window.perimeterHide && perimeterHide()" completionHandler:nil];
 }
 
 - (void)toggle {
@@ -133,19 +133,19 @@ static const CGFloat popWidth = 340;
 }
 @end
 
-static KordonPop *pop;
+static PerimeterPop *pop;
 
-static void kordon_pop_run(const char *url) {
+static void perimeter_pop_run(const char *url) {
 	@autoreleasepool {
 		[NSApplication sharedApplication];
 		[NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
-		pop = [KordonPop new];
+		pop = [PerimeterPop new];
 		[pop setupWithURL:[NSString stringWithUTF8String:url]];
 		[NSApp run];
 	}
 }
 
-static void kordon_pop_cmd(int cmd) {
+static void perimeter_pop_cmd(int cmd) {
 	dispatch_async(dispatch_get_main_queue(), ^{
 		switch (cmd) {
 		case 0: [pop toggle]; break;
@@ -168,24 +168,24 @@ import (
 func init() { runtime.LockOSThread() } // Cocoa wants the main thread
 
 // Popover runs the tray window: a hidden, ready window that shows on "toggle",
-// "show" and "hide" lines from cmds, until cmds closes (Kordon has exited).
+// "show" and "hide" lines from cmds, until cmds closes (Perimeter has exited).
 func Popover(url string, cmds io.Reader) error {
 	go func() {
 		sc := bufio.NewScanner(cmds)
 		for sc.Scan() {
 			switch sc.Text() {
 			case "toggle":
-				C.kordon_pop_cmd(0)
+				C.perimeter_pop_cmd(0)
 			case "show":
-				C.kordon_pop_cmd(1)
+				C.perimeter_pop_cmd(1)
 			case "hide":
-				C.kordon_pop_cmd(2)
+				C.perimeter_pop_cmd(2)
 			}
 		}
 		os.Exit(0)
 	}()
 	cu := C.CString(url)
 	defer C.free(unsafe.Pointer(cu))
-	C.kordon_pop_run(cu)
+	C.perimeter_pop_run(cu)
 	return nil
 }

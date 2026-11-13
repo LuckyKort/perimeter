@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ef1m03/kordon"
-	"github.com/ef1m03/kordon/internal/app"
-	"github.com/ef1m03/kordon/internal/update"
+	"perimeter"
+	"perimeter/internal/app"
+	"perimeter/internal/update"
 )
 
 // UpdateInfo is what the tray window and the panel show about updates.
@@ -29,13 +29,16 @@ type whatsNew struct {
 	notes   []update.Note
 }
 
+// changelog is the embedded CHANGELOG.md; tests swap it for their own text.
+var changelog = perimeter.Changelog
+
 func seenPath() string { return filepath.Join(app.Dir(), "seen-version") }
 
-// newWhatsNew must run before Kordon writes state.json for the first time:
+// newWhatsNew must run before Perimeter writes state.json for the first time:
 // a state.json from an earlier run tells an update from a fresh install.
 func newWhatsNew(version string) *whatsNew {
 	w := &whatsNew{}
-	notes := update.Notes(update.Section(kordon.Changelog, version))
+	notes := update.Notes(update.Section(changelog, version))
 	if len(notes) == 0 {
 		return w // dev build, or a version without a changelog section
 	}
@@ -71,5 +74,5 @@ func (w *whatsNew) dismiss() {
 
 // CurrentNotes is this version's own changelog, for the panel's About page.
 func CurrentNotes(version string) []update.Note {
-	return update.Notes(update.Section(kordon.Changelog, version))
+	return update.Notes(update.Section(changelog, version))
 }

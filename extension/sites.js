@@ -1,4 +1,4 @@
-// AI sites the extension pauses when Kordon says so. A site matches itself and
+// AI sites the extension pauses when Perimeter says so. A site matches itself and
 // its subdomains. People can switch any off and add their own in the popup.
 export const DEFAULT_SITES = [
   "claude.ai",

@@ -33,5 +33,5 @@ func processAlive(pid int) bool {
 }
 
 // stopProcess: there is no SIGTERM on Windows, and a forced kill would leave
-// apps frozen, so the user restarts Kordon from the menu.
+// apps frozen, so the user restarts Perimeter from the menu.
 func stopProcess(int) bool { return false }

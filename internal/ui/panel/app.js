@@ -1,6 +1,6 @@
 "use strict";
 
-// Kordon panel. Talks to the local Kordon over /api; every value from it is
+// Perimeter panel. Talks to the local Perimeter over /api; every value from it is
 // escaped before it goes into the page (custom app names come from config.yaml).
 
 const L = {
@@ -20,13 +20,13 @@ const L = {
     lk_v6_ok: "IPv6 идёт через разрешённый адрес.", lk_v6_bad: "По IPv6 программы выходят мимо VPN. Выключите IPv6 в системе или включите его поддержку в VPN.",
     lk_dns: "DNS", lk_dns_none: "Не удалось определить DNS-сервер.", lk_dns_ok: "DNS-сервер в той же стране, что и IP.",
     lk_dns_warn: "Запросы к сайтам идут через DNS в другой стране - скорее всего, у провайдера. Включите в VPN «DNS через туннель».",
-    lk_web: "Браузер", lk_web_d: "Утечку через WebRTC проверяет расширение Kordon для браузера.",
+    lk_web: "Браузер", lk_web_d: "Утечку через WebRTC проверяет расширение Perimeter для браузера.",
     lk_services: "Ответы сервисов", lk_noans: "нет ответа",
     lead_overview: "Что сейчас с сетью и защищёнными приложениями",
-    lead_apps: "Kordon замораживает выбранные программы, когда сеть или IP не те. У каждой могут быть свои правила.",
+    lead_apps: "Perimeter замораживает выбранные программы, когда сеть или IP не те. У каждой могут быть свои правила.",
     lead_allow: "Где приложениям можно работать. Подходит хоть что-то одно - значит можно.",
     lead_networks: "В доверенных сетях (дом, офис) приложения работают без проверки IP. Сеть узнаётся по её роутеру.",
-    lead_stats: "Сколько раз Kordon вмешивался за последние 14 дней",
+    lead_stats: "Сколько раз Perimeter вмешивался за последние 14 дней",
     lead_history: "Последние события",
     lead_settings: "Изменения сохраняются сразу",
     ip: "Внешний IP", ipv6: "IPv6", dns: "DNS", network: "Сеть", none: "нет", offline: "нет интернета", checking: "проверяю…",
@@ -44,9 +44,9 @@ const L = {
     current_net: "Текущая сеть", router: "Роутер", net_name: "Название, например «Дом»", no_trusted: "Доверенных сетей пока нет",
     here: "вы здесь", rename: "Переименовать",
     s_saves: "раз VPN вернулся вовремя", s_freezes: "заморозок", s_blocks: "раз закрыл приложения", s_time: "в заморозке всего",
-    legend_saves: "вернулся вовремя", legend_blocks: "закрыто", legend_other: "заморожено", trusted_list: "Доверенные сети", session: "С запуска Kordon",
+    legend_saves: "вернулся вовремя", legend_blocks: "закрыто", legend_other: "заморожено", trusted_list: "Доверенные сети", session: "С запуска Perimeter",
     g_protect: "Защита", g_iface: "Интерфейс", g_system: "Система", g_files: "Файлы и помощь",
-    o_freeze: "Замораживать при смене сети", o_freeze_d: "Пока Kordon проверяет IP, обычно доля секунды",
+    o_freeze: "Замораживать при смене сети", o_freeze_d: "Пока Perimeter проверяет IP, обычно доля секунды",
     o_offline: "Замораживать без интернета", o_offline_d: "Когда интернет пропал целиком",
     o_ipv6: "Проверять IPv6", o_ipv6_d: "Ловит VPN, которые заворачивают только IPv4",
     o_dns: "Утечка DNS", o_dns_d: "Запросы к сайтам идут мимо VPN", dns_warn: "Предупреждать", dns_block: "Замораживать", dns_off: "Не проверять",
@@ -54,11 +54,10 @@ const L = {
     o_interval: "Сверять IP раз в", o_interval_d: "Когда всё в порядке", o_agree: "Сервисов должны совпасть", o_agree_d: "Чтобы поверить IP",
     o_menubar: "Рядом со значком", mb_ip: "Страна и IP", mb_country: "Только страна", mb_icon: "Ничего",
     o_lang: "Язык", lang_auto: "Как в системе", o_notify: "Уведомления",
-    o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Несколько раз в день, ставятся только по клику", tg_t: "Уведомления в Telegram", tg_d: "Бот Kordon напишет, когда VPN отвалится и программы встанут на паузу, и когда всё вернётся. Удобно, если Claude Code или другой агент работает без вас. Адреса в сообщения не попадают, только страна.", tg_on: "Подключено. Сообщения приходят в чат с ботом Kordon.", tg_wait: "Откройте Telegram и нажмите «Старт» в боте Kordon…", tg_link: "Подключить", tg_again: "Открыть ещё раз", tg_test: "Проверить", tg_off: "Отключить",
-    o_ping: "Учитывать меня в счётчике пользователей", o_ping_d: "Раз в день - только версия и система. Без IP и без номера установки", on: "Да", off: "Нет",
+    o_autostart: "Запускать при входе в систему", o_update: "Проверять обновления", o_update_d: "Несколько раз в день, ставятся только по клику", on: "Да", off: "Нет",
     open_config: "Открыть config.yaml", open_log: "Открыть журнал", report: "Сообщить о проблеме", sec: "с",
     update_avail: "Доступна версия", update_btn: "Обновить", saved: "Сохранено", whats_new: "Что нового в", all_changes: "Все версии", about_text: "Kill switch для приложений: замораживает выбранные программы, когда отваливается VPN или меняется IP. Открытый код, ничего не отправляет без вашего согласия.",
-    made: "Сделано в Efimov Dev", github: "Kordon на GitHub", license: "Лицензия GPL-3.0", telegram: "Написать в Telegram",
+    based_on: "Основано на Kordon © Efimov Dev", github: "Perimeter на GitHub", license: "Лицензия GPL-3.0",
     history_empty: "Пока ничего не случилось", paused_until: "Пауза до", paused_forever: "Пауза до перезапуска",
   },
   en: {
@@ -77,13 +76,13 @@ const L = {
     lk_v6_ok: "IPv6 goes through an allowed address.", lk_v6_bad: "Over IPv6 programs bypass the VPN. Turn IPv6 off in the system or enable it in the VPN.",
     lk_dns: "DNS", lk_dns_none: "Couldn't tell the DNS server.", lk_dns_ok: "The DNS server is in the same country as the IP.",
     lk_dns_warn: "Site lookups go through DNS in another country - probably your ISP's. Turn on \"DNS through the tunnel\" in the VPN.",
-    lk_web: "Browser", lk_web_d: "The Kordon browser extension checks for WebRTC leaks.",
+    lk_web: "Browser", lk_web_d: "The Perimeter browser extension checks for WebRTC leaks.",
     lk_services: "Service answers", lk_noans: "no answer",
     lead_overview: "Your network and protected apps right now",
-    lead_apps: "Kordon freezes the chosen apps when the network or IP isn't right. Each one can have its own rules.",
+    lead_apps: "Perimeter freezes the chosen apps when the network or IP isn't right. Each one can have its own rules.",
     lead_allow: "Where apps may run. Matching any one entry is enough.",
     lead_networks: "On trusted networks (home, office) apps run without the IP check. A network is recognised by its router.",
-    lead_stats: "How often Kordon stepped in over the last 14 days",
+    lead_stats: "How often Perimeter stepped in over the last 14 days",
     lead_history: "Recent events",
     lead_settings: "Changes are saved right away",
     ip: "Public IP", ipv6: "IPv6", dns: "DNS", network: "Network", none: "none", offline: "no internet", checking: "checking…",
@@ -101,9 +100,9 @@ const L = {
     current_net: "Current network", router: "Router", net_name: "Name, e.g. \"Home\"", no_trusted: "No trusted networks yet",
     here: "you're here", rename: "Rename",
     s_saves: "times the VPN came back in time", s_freezes: "freezes", s_blocks: "times apps were closed", s_time: "spent frozen",
-    legend_saves: "back in time", legend_blocks: "closed", legend_other: "frozen", trusted_list: "Trusted networks", session: "Since Kordon started",
+    legend_saves: "back in time", legend_blocks: "closed", legend_other: "frozen", trusted_list: "Trusted networks", session: "Since Perimeter started",
     g_protect: "Protection", g_iface: "Interface", g_system: "System", g_files: "Files and help",
-    o_freeze: "Freeze on network change", o_freeze_d: "While Kordon checks the IP, usually a split second",
+    o_freeze: "Freeze on network change", o_freeze_d: "While Perimeter checks the IP, usually a split second",
     o_offline: "Freeze when offline", o_offline_d: "When the internet is gone entirely",
     o_ipv6: "Check IPv6", o_ipv6_d: "Catches VPNs that tunnel IPv4 only",
     o_dns: "DNS leaks", o_dns_d: "Lookups bypass the VPN", dns_warn: "Warn", dns_block: "Freeze", dns_off: "Don't check",
@@ -111,11 +110,10 @@ const L = {
     o_interval: "Check the IP every", o_interval_d: "While all is well", o_agree: "Services must agree", o_agree_d: "To trust an IP",
     o_menubar: "Next to the icon", mb_ip: "Country and IP", mb_country: "Country only", mb_icon: "Nothing",
     o_lang: "Language", lang_auto: "System", o_notify: "Notifications",
-    o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "A few times a day, installed only when you click", tg_t: "Telegram alerts", tg_d: "The Kordon bot writes when the VPN drops and apps are paused, and when it's back. Handy when Claude Code or another agent works without you. No addresses in the messages, only the country.", tg_on: "Connected. Messages go to your chat with the Kordon bot.", tg_wait: "Open Telegram and press Start in the Kordon bot…", tg_link: "Connect", tg_again: "Open again", tg_test: "Test", tg_off: "Disconnect",
-    o_ping: "Count me among Kordon's users", o_ping_d: "Once a day - just the version and the OS. No IP, no install id", on: "Yes", off: "No",
+    o_autostart: "Start at login", o_update: "Check for updates", o_update_d: "A few times a day, installed only when you click", on: "Yes", off: "No",
     open_config: "Open config.yaml", open_log: "Open log", report: "Report a problem", sec: "s",
     update_avail: "Version available:", update_btn: "Update", saved: "Saved", whats_new: "What's new in", all_changes: "All versions", about_text: "A kill switch for apps: freezes the apps you choose when the VPN drops or your IP changes. Open source, sends nothing without your consent.",
-    made: "Made by Efimov Dev", github: "Kordon on GitHub", license: "GPL-3.0 license", telegram: "Message on Telegram",
+    based_on: "Based on Kordon © Efimov Dev", github: "Perimeter on GitHub", license: "GPL-3.0 license",
     history_empty: "Nothing has happened yet", paused_until: "Paused until", paused_forever: "Paused until restart",
   },
 };
@@ -139,6 +137,8 @@ const svg = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const PAGES = ["overview", "apps", "allow", "networks", "leaks", "stats", "history", "settings", "about"];
+// Sidebar tile colours (Apple system palette), one per page.
+const NAV_TINT = { overview: "#34C759", apps: "#007AFF", allow: "#30B0C7", networks: "#5856D6", leaks: "#FF9500", stats: "#AF52DE", history: "#FF2D55", settings: "#8E8E93", about: "#8E8E93" };
 let S = null; // last state
 let page = (location.hash || "#overview").slice(1);
 let countries = [];
@@ -250,11 +250,17 @@ function ruleEditor(app) {
   </div>`;
 }
 
-// A steady colour per app name, so the list is easy to scan.
+// A steady colour per app name: a small app-icon-like tile, so the list is easy to scan.
 function avatarStyle(name) {
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return `background:hsl(${h} 60% 50% / .16);color:hsl(${h} 55% 45%)`;
+  return `background:linear-gradient(145deg,hsl(${h} 75% 62%),hsl(${(h + 28) % 360} 70% 46%));color:#fff`;
+}
+
+// The app's own icon when this computer has the app, else its letter.
+function appAvatar(a) {
+  if (a.icon) return `<img class="avatar app-ic" src="/api/icon/${encodeURIComponent(a.id)}" alt="">`;
+  return `<div class="avatar" style="${avatarStyle(a.name)}">${esc(a.name[0])}</div>`;
 }
 
 function appRow(a) {
@@ -266,7 +272,7 @@ function appRow(a) {
     ? `<button class="btn small danger" data-op="remove_custom" data-app="${esc(a.id)}">${t("remove")}</button>`
     : `<label class="switch"><input type="checkbox" data-toggle="${esc(a.id)}" ${a.enabled ? "checked" : ""}><span></span></label>`;
   const meta = a.custom ? esc((a.match || []).join(", ")) : (a.enabled ? st : "");
-  return `<div class="item"><div class="avatar" style="${avatarStyle(a.name)}">${esc(a.name[0])}</div>
+  return `<div class="item">${appAvatar(a)}
     <div><div class="name">${esc(a.name)}</div><div class="meta">${meta}</div></div>
     <div class="end">${a.custom ? st : ""}${rules}${toggle}</div></div>
     ${openRule === a.id && a.enabled ? ruleEditor(a) : ""}`;
@@ -382,30 +388,23 @@ function settings() {
   </div>
   <h2>${t("g_system")}</h2><div class="card">
     <div class="set"><div class="txt"><b>${t("o_autostart")}</b></div><label class="switch"><input type="checkbox" id="autostart" ${S.autostart ? "checked" : ""}><span></span></label></div>
-    ${toggleSet("update_check", t("o_update"), t("o_update_d"), s.update_check)}
-    ${selSet("usage_ping", t("o_ping"), t("o_ping_d"), s.usage_ping === "on" ? "on" : "off", [["on", t("on")], ["off", t("off")]])}
-  </div>
-  <h2>Telegram</h2><div class="card">
-    <div class="set"><div class="txt"><b>${t("tg_t")}</b><span>${S.telegram?.linked ? t("tg_on") : S.telegram?.waiting ? t("tg_wait") : t("tg_d")}</span></div>
-      <div class="field" style="gap:8px;display:flex">${S.telegram?.linked
-        ? `<button class="btn small" data-op="tg_test">${t("tg_test")}</button><button class="btn small danger" data-op="tg_unlink">${t("tg_off")}</button>`
-        : `<button class="btn small primary" data-op="tg_link">${S.telegram?.waiting ? t("tg_again") : t("tg_link")}</button>`}</div></div>
+    ${S.repoUrl ? toggleSet("update_check", t("o_update"), t("o_update_d"), s.update_check) : ""}
   </div>
   <h2>${t("g_files")}</h2><div class="card pad" style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn" data-op="open_config">${t("open_config")}</button>
     <button class="btn" data-op="open_log">${t("open_log")}</button>
-    <button class="btn" data-op="report">${t("report")}</button>
+    ${S.repoUrl ? `<button class="btn" data-op="report">${t("report")}</button>` : ""}
   </div>`;
 }
 
 function about() {
-  return `<div class="card about"><img src="icon.png" alt=""><div class="big">Kordon ${esc(S.version)}</div>
+  return `<div class="card about"><img src="icon.png" alt=""><div class="big">Perimeter ${esc(S.version)}</div>
     <p>${t("about_text")}</p>
-    <div class="links"><button class="btn" data-url="https://github.com/ef1m03/kordon">${t("github")}</button><button class="btn" data-url="https://t.me/efimov_dev">${t("telegram")} @efimov_dev</button><button class="btn primary" data-url="${esc(S.studioUrl)}">${t("made")}</button></div>
-    <p style="font-size:12px">© Efimov Dev · efimovdev.ru · ${t("license")}</p></div>
+    ${S.repoUrl ? `<div class="links"><button class="btn" data-url="${esc(S.repoUrl)}">${t("github")}</button></div>` : ""}
+    <p style="font-size:12px">${t("based_on")} · ${t("license")}</p></div>
   ${S.notes && S.notes.length ? `<h2>${t("whats_new")} ${esc(S.version)}</h2>
   <div class="card notes"><ul>${S.notes.map((n) => `<li><b>${esc(n.title)}</b>${n.text ? ` - ${esc(n.text)}` : ""}</li>`).join("")}</ul>
-  <button class="btn small" data-url="https://github.com/ef1m03/kordon/blob/main/CHANGELOG.md">${t("all_changes")}</button></div>` : ""}`;
+  ${S.repoUrl ? `<button class="btn small" data-url="${esc(S.repoUrl)}/blob/main/CHANGELOG.md">${t("all_changes")}</button>` : ""}</div>` : ""}`;
 }
 
 // ---------- leak check ----------
@@ -470,9 +469,8 @@ const RENDER = { overview, apps, allow, networks, leaks, stats, history, setting
 function nav() {
   const bad = S.status === "frozen" || S.status === "blocked";
   document.getElementById("nav").innerHTML = PAGES.map((p) =>
-    `<a href="#${p}" class="${p === page ? "on" : ""}">${svg(p)}<span>${t(p)}</span>${p === "overview" && bad ? `<span class="badge ${S.status}">!</span>` : ""}</a>`).join("");
+    `<a href="#${p}" class="${p === page ? "on" : ""}"><i class="ni" style="--ni:${NAV_TINT[p]}">${svg(p)}</i><span>${t(p)}</span>${p === "overview" && bad ? `<span class="badge ${S.status}">!</span>` : ""}</a>`).join("");
   document.getElementById("ver").textContent = S.version;
-  document.getElementById("studio").dataset.url = S.studioUrl;
 }
 
 function render() {
@@ -497,7 +495,7 @@ async function refresh(force = false) {
     const a = document.activeElement;
     if (!force && a && a.closest("main") && (a.tagName === "INPUT" || a.tagName === "SELECT")) return;
     render();
-  } catch (_) { /* Kordon restarting: try again on the next tick */ }
+  } catch (_) { /* Perimeter restarting: try again on the next tick */ }
 }
 
 // ---------- events ----------

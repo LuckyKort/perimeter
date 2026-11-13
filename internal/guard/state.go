@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ef1m03/kordon/internal/config"
-	"github.com/ef1m03/kordon/internal/procs"
+	"perimeter/internal/config"
+	"perimeter/internal/procs"
 )
 
 type EventKind int
