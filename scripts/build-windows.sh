@@ -6,8 +6,10 @@ cd "$(dirname "$0")/.."
 
 VERSION="${VERSION:-$(git describe --tags --always 2>/dev/null || echo dev)}"
 VERSION="${VERSION#v}"
-# REPO=owner/name turns on the About link, problem reports and updates from its releases.
-REPO="${REPO:-}"
+# REPO=owner/name: another repository for updates, the About link and problem
+# reports (the default is in internal/app/paths.go). REPO= with no value turns them off.
+LDREPO=""
+if [ "${REPO+set}" = set ]; then LDREPO="-X perimeter/internal/app.Repo=$REPO"; fi
 mkdir -p dist
 go run ./tools/mkicons build/icons
 
@@ -21,7 +23,7 @@ WINVER="$(echo "$VERSION" | grep -Eo '^[0-9]+(\.[0-9]+){0,3}' || echo 0.0.0)"
 
 for arch in amd64 arm64; do
   CGO_ENABLED=0 GOOS=windows GOARCH=$arch \
-    go build -trimpath -ldflags "-s -w -H windowsgui -X main.version=$VERSION -X perimeter/internal/app.Repo=$REPO" \
+    go build -trimpath -ldflags "-s -w -H windowsgui -X main.version=$VERSION $LDREPO" \
     -o dist/perimeter-windows-$arch.exe ./cmd/perimeter
 done
 rm -f cmd/perimeter/rsrc_windows_*.syso

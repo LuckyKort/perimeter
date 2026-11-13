@@ -8,7 +8,13 @@ import (
 	"strings"
 )
 
+// Notify shows a native notification from the app bundle. A bare binary (a
+// development build) has no notification identity, so it falls back to
+// AppleScript, which shows the notification as Script Editor's.
 func Notify(title, body string) {
+	if nativeNotify(title, body) {
+		return
+	}
 	// AppleScript strings: escape backslashes and quotes.
 	q := func(s string) string {
 		return `"` + strings.ReplaceAll(strings.ReplaceAll(s, `\`, `\\`), `"`, `\"`) + `"`

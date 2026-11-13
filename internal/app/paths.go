@@ -29,13 +29,14 @@ func LogPath() string    { return filepath.Join(Dir(), "perimeter.log") }
 func StatePath() string  { return filepath.Join(Dir(), "state.json") }
 func LockPath() string   { return filepath.Join(Dir(), "perimeter.lock") }
 
-// Repo is this build's GitHub "owner/name": the About link and problem reports
-// go there, and updates come from its releases. Set it at build time:
+// Repo is the GitHub "owner/name" this build belongs to: the About link and
+// problem reports go there, and updates come from its releases. A fork that
+// publishes elsewhere sets its own at build time (the release workflow does):
 //
 //	go build -ldflags "-X perimeter/internal/app.Repo=owner/name"
 //
-// Empty (the default) hides those links and turns updates off.
-var Repo = ""
+// An empty Repo hides those links and turns updates off.
+var Repo = "LuckyKort/perimeter"
 
 // RepoURL is Repo's page, or "" when the build has none.
 func RepoURL() string {

@@ -38,7 +38,7 @@ body::-webkit-scrollbar { display: none; }
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
 button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
-.pop { padding: 12px; background: var(--tint); min-height: 100vh; }
+.pop { padding: 12px; background: var(--tint); } /* no min-height: the native window takes the content's height (fit) */
 html.win .pop { background: none; }
 .pop.in > * { animation: rise .42s var(--spring) both; }
 .pop.in > *:nth-child(2) { animation-delay: .03s; }
@@ -60,8 +60,7 @@ html.win .pop { background: none; }
   box-shadow: inset 0 0 0 .5px var(--hair), inset 0 1px 0 var(--hi);
 }
 
-/* status card: the status colour glows from the corner, the IP sits inside
-   the perimeter brackets of the logo */
+/* status card: the status colour glows from the corner */
 .ok { --c: var(--ok); } .frozen, .starting { --c: var(--warn); } .blocked { --c: var(--bad); } .paused { --c: var(--gray); }
 .hero {
   position: relative; overflow: hidden; border-radius: 20px; padding: 16px 18px 16px;
@@ -71,17 +70,6 @@ html.win .pop { background: none; }
     var(--card);
   transition: background .5s var(--ease);
 }
-.hero::before {
-  /* four corner brackets, drawn as 8 short bars */
-  content: ""; position: absolute; inset: 9px; pointer-events: none; opacity: .55;
-  --b: color-mix(in srgb, var(--c) 80%, var(--text));
-  background:
-    linear-gradient(var(--b), var(--b)) 0 0 / 14px 2px no-repeat, linear-gradient(var(--b), var(--b)) 0 0 / 2px 14px no-repeat,
-    linear-gradient(var(--b), var(--b)) 100% 0 / 14px 2px no-repeat, linear-gradient(var(--b), var(--b)) 100% 0 / 2px 14px no-repeat,
-    linear-gradient(var(--b), var(--b)) 0 100% / 14px 2px no-repeat, linear-gradient(var(--b), var(--b)) 0 100% / 2px 14px no-repeat,
-    linear-gradient(var(--b), var(--b)) 100% 100% / 14px 2px no-repeat, linear-gradient(var(--b), var(--b)) 100% 100% / 2px 14px no-repeat;
-}
-.hero.paused::before { opacity: .3; }
 .st { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13px; padding: 4px 10px 4px 8px; margin: 2px 0 0 -2px;
   border-radius: 999px; background: color-mix(in srgb, var(--c) 16%, transparent); color: color-mix(in srgb, var(--c) 70%, var(--text)); max-width: calc(100% - 64px); }
 .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c); position: relative; box-shadow: 0 0 8px var(--c); }
@@ -188,10 +176,9 @@ html.win .pop { background: none; }
 .sug > span:last-child { color: var(--blue); font-weight: 700; }
 
 /* footer */
-.foot { display: flex; align-items: center; justify-content: space-between; margin: 12px 6px 2px; font-size: 12.5px; }
-.foot .open { font-weight: 600; color: var(--blue); display: inline-flex; align-items: center; gap: 4px; transition: gap .3s var(--spring); }
-.foot .open:hover { gap: 7px; }
-.foot .kbd { color: var(--faint); font-size: 11.5px; }
+/* footer: the way to the full panel */
+.btn.open { margin-top: 10px; }
+.btn.open svg { opacity: .7; }
 .toast { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); background: var(--text); color: var(--solid); padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; animation: rise .3s var(--spring) both; white-space: nowrap; box-shadow: 0 6px 20px rgba(0, 0, 0, .2); }
 
 @media (prefers-reduced-motion: reduce) {

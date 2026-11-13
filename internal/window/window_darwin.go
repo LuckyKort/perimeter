@@ -33,6 +33,48 @@ static void perimeter_setup_app(const char *closeTitle, const char *quitTitle) {
 	[NSApp setMainMenu:bar];
 	[NSApp activateIgnoringOtherApps:YES];
 }
+
+// A transparent strip over the top of the page that moves the window: over a
+// web view macOS doesn't reliably treat the transparent title bar as one, as
+// the page takes the mouse first. A double click zooms, as on a title bar.
+@interface PerimeterDragStrip : NSView
+@end
+@implementation PerimeterDragStrip
+- (BOOL)mouseDownCanMoveWindow { return YES; }
+- (void)mouseDown:(NSEvent *)event {
+	if (event.clickCount == 2) {
+		[self.window performZoom:nil];
+		return;
+	}
+	[self.window performWindowDragWithEvent:event];
+}
+@end
+
+// No title bar: the page fills the window, like Telegram. The traffic lights
+// stay, and an empty unified toolbar makes the top strip taller, so they sit
+// lower, inside the page's floating sidebar. The strip is still the window's
+// title bar: dragging it moves the window, a double click zooms.
+static void perimeter_frameless(void *ptr) {
+	NSWindow *w = (__bridge NSWindow *)ptr;
+	w.styleMask |= NSWindowStyleMaskFullSizeContentView;
+	w.titlebarAppearsTransparent = YES;
+	w.titleVisibility = NSWindowTitleHidden;
+	NSToolbar *bar = [[NSToolbar alloc] initWithIdentifier:@"perimeter"];
+	w.toolbar = bar;
+	w.toolbarStyle = NSWindowToolbarStyleUnified;
+	w.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
+	w.minSize = NSMakeSize(760, 520);
+
+	// The page keeps this strip free of controls (see html.mac in app.css).
+	NSView *content = w.contentView;
+	const CGFloat h = 44;
+	NSRect r = content.bounds;
+	BOOL flipped = content.isFlipped;
+	PerimeterDragStrip *strip = [[PerimeterDragStrip alloc]
+		initWithFrame:NSMakeRect(0, flipped ? 0 : NSHeight(r) - h, NSWidth(r), h)];
+	strip.autoresizingMask = NSViewWidthSizable | (flipped ? NSViewMaxYMargin : NSViewMinYMargin);
+	[content addSubview:strip positioned:NSWindowAbove relativeTo:nil];
+}
 */
 import "C"
 
@@ -51,7 +93,11 @@ func Open(url, title, closeTitle, quitTitle string) error {
 	ct, qt := C.CString(closeTitle), C.CString(quitTitle)
 	defer C.free(unsafe.Pointer(ct))
 	defer C.free(unsafe.Pointer(qt))
-	w.Dispatch(func() { C.perimeter_setup_app(ct, qt) })
+	win := w.Window()
+	w.Dispatch(func() {
+		C.perimeter_setup_app(ct, qt)
+		C.perimeter_frameless(win)
+	})
 	w.Navigate(url)
 	w.Run()
 	return nil

@@ -476,6 +476,7 @@ function nav() {
 function render() {
   if (!PAGES.includes(page)) page = "overview";
   document.documentElement.lang = S.lang;
+  document.documentElement.classList.toggle("mac", S.goos === "darwin");
   nav();
   const main = document.getElementById("main");
   const keep = main.scrollTop;

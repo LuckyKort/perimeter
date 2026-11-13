@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"math"
 	"sync"
+	"time"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gobold"
@@ -71,17 +72,85 @@ func fill(img *image.NRGBA, c color.NRGBA, alpha func(x, y float64) float64) {
 	}
 }
 
-// Dot is the macOS menu bar icon: a coloured circle, the text sits next to it.
-func Dot(t Tone) []byte {
+// barColors: the alarm colours of the menu bar icon (system orange and red).
+var barColors = map[Tone]color.NRGBA{Amber: {0xff, 0x9f, 0x0a, 0xff}, Red: {0xff, 0x45, 0x3a, 0xff}}
+
+// BarIcon is the macOS menu bar icon, 16 pt drawn at 32 px: the logo's fence.
+// Calm states are template images (black; macOS tints them to the menu bar),
+// alarms are coloured. lit is how many of the 8 dashes still glow while apps
+// are frozen: they go out one by one as the grace time runs out.
+//
+//	Green - full fence and the dot         (template)
+//	Gray  - dim fence and a pause sign     (template)
+//	Amber - lit dashes and the dot, orange (frozen)
+//	Red   - dim fence and a cross, red     (closed)
+func BarIcon(t Tone, lit int) (png []byte, template bool) {
+	f := fence{c: 8, h: 5.5, r: 3.2, l: 2.12}
+	const w = 0.8 // half the stroke
+	c, template := color.NRGBA{0, 0, 0, 0xff}, true
+	if bc, ok := barColors[t]; ok {
+		c, template = bc, false
+	}
+	type mark struct {
+		dist  func(x, y float64) float64
+		half  float64
+		alpha float64
+	}
+	dashes := func(from, to int, alpha float64) mark {
+		return mark{func(x, y float64) float64 {
+			d := math.Inf(1)
+			for i := from; i < to; i++ {
+				d = math.Min(d, f.dist(i, x, y))
+			}
+			return d
+		}, w, alpha}
+	}
+	dot := mark{func(x, y float64) float64 { return math.Hypot(x-8, y-8) }, 1.9, 1}
+	seg := func(alpha float64, s ...[4]float64) mark {
+		return mark{func(x, y float64) float64 {
+			d := math.Inf(1)
+			for _, v := range s {
+				d = math.Min(d, segDist(x, y, v[0], v[1], v[2], v[3]))
+			}
+			return d
+		}, 0.75, alpha}
+	}
+	var marks []mark
+	switch t {
+	case Gray:
+		marks = []mark{dashes(0, 8, 0.4), seg(0.75, [4]float64{6.8, 6, 6.8, 10}, [4]float64{9.2, 6, 9.2, 10})}
+	case Amber:
+		lit = max(0, min(8, lit))
+		marks = []mark{dashes(0, lit, 1), dashes(lit, 8, 0.22), dot}
+	case Red:
+		marks = []mark{dashes(0, 8, 0.25), seg(1, [4]float64{6.4, 6.4, 9.6, 9.6}, [4]float64{9.6, 6.4, 6.4, 9.6})}
+	default:
+		marks = []mark{dashes(0, 8, 1), dot}
+	}
 	const n = 32
+	unit := float64(n) / 16
 	img := image.NewNRGBA(image.Rect(0, 0, n, n))
-	fill(img, tones[t], func(x, y float64) float64 {
-		d := math.Hypot(x-n/2, y-n/2) - 9
-		return math.Min(math.Max(0.5-d, 0), 1)
-	})
-	var b bytes.Buffer
-	_ = png.Encode(&b, img)
-	return b.Bytes()
+	for py := 0; py < n; py++ {
+		for px := 0; px < n; px++ {
+			x, y := (float64(px)+0.5)/unit, (float64(py)+0.5)/unit
+			a := 0.0
+			for _, m := range marks {
+				a = math.Max(a, m.alpha*clamp01(0.5-(m.dist(x, y)-m.half)*unit))
+			}
+			if a > 0 {
+				img.SetNRGBA(px, py, color.NRGBA{c.R, c.G, c.B, uint8(a*255 + 0.5)})
+			}
+		}
+	}
+	return pngBytes(img), template
+}
+
+// BarLit is how many fence dashes glow with this much grace time left.
+func BarLit(left, grace time.Duration) int {
+	if grace <= 0 {
+		return 8
+	}
+	return int(math.Ceil(8 * float64(left) / float64(grace)))
 }
 
 var (
@@ -156,6 +225,9 @@ func ICO(imgs ...*image.NRGBA) []byte {
 // AppIcon is the big icon for the .app bundle, the .exe and the README.
 func AppIcon(n int) *image.NRGBA { return Logo(n, Green) }
 
+// logoFence: the 46x46 square at 27..73, corner 13; a dash is 5.5% of the outline.
+var logoFence = fence{c: 50, h: 23, r: 13, l: 8.892}
+
 // Logo is the Perimeter mark, drawn on a 100x100 grid: a blue tile (80x80,
 // corner 18) with a dashed perimeter - eight dashes, one on every corner and
 // side centre - around a dot. Gray is the browser extension's "off" look.
@@ -180,7 +252,7 @@ func Logo(n int, t Tone) *image.NRGBA {
 			}
 			k := clamp01((y - 10) / 80)
 			c := [3]float64{lerp(top.R, bottom.R, k), lerp(top.G, bottom.G, k), lerp(top.B, bottom.B, k)}
-			mark := clamp01(0.5 - math.Min(fenceDist(x, y)-3, math.Hypot(x-50, y-50)-7)/aa)
+			mark := clamp01(0.5 - math.Min(logoFence.near(x, y)-3, math.Hypot(x-50, y-50)-7)/aa)
 			for i := range c {
 				c[i] += (255 - c[i]) * mark
 			}
@@ -196,18 +268,29 @@ func Logo(n int, t Tone) *image.NRGBA {
 	return img
 }
 
-// fenceDist is the distance from (x, y) to the nearest dash centre line. The
-// perimeter is the 46x46 square at 27..73 with corner 13; each dash is 5.5% of
-// its length (8.89 units).
-func fenceDist(x, y float64) float64 {
-	const half = 4.446      // half a dash along a side
-	const span = 4.446 / 13 // half a dash along a corner arc, in radians
-	d := math.Inf(1)
-	for _, s := range [4][4]float64{{50 - half, 27, 50 + half, 27}, {73, 50 - half, 73, 50 + half}, {50 - half, 73, 50 + half, 73}, {27, 50 - half, 27, 50 + half}} {
-		d = math.Min(d, segDist(x, y, s[0], s[1], s[2], s[3]))
+// fence is the logo's dashed perimeter: a rounded square centred at (c, c)
+// with half-size h and corner r, and eight dashes of length l - one on every
+// side centre and corner, clockwise from the top.
+type fence struct{ c, h, r, l float64 }
+
+// dist is the distance from (x, y) to the centre line of dash i (0..7).
+func (f fence) dist(i int, x, y float64) float64 {
+	half := f.l / 2
+	if i%2 == 0 { // a side: top, right, bottom, left
+		dx, dy := [4]float64{0, 1, 0, -1}[i/2], [4]float64{-1, 0, 1, 0}[i/2]
+		mx, my := f.c+dx*f.h, f.c+dy*f.h
+		return segDist(x, y, mx-dy*half, my-dx*half, mx+dy*half, my+dx*half)
 	}
-	for _, c := range [4][3]float64{{40, 40, -0.75 * math.Pi}, {60, 40, -0.25 * math.Pi}, {60, 60, 0.25 * math.Pi}, {40, 60, 0.75 * math.Pi}} {
-		d = math.Min(d, arcDist(x, y, c[0], c[1], 13, c[2], span))
+	sx, sy := [4]float64{1, 1, -1, -1}[i/2], [4]float64{-1, 1, 1, -1}[i/2] // the corner's direction
+	in := f.h - f.r
+	return arcDist(x, y, f.c+sx*in, f.c+sy*in, f.r, math.Atan2(sy, sx), half/f.r)
+}
+
+// near is the distance to the nearest dash.
+func (f fence) near(x, y float64) float64 {
+	d := math.Inf(1)
+	for i := 0; i < 8; i++ {
+		d = math.Min(d, f.dist(i, x, y))
 	}
 	return d
 }

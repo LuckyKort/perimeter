@@ -5,7 +5,7 @@
 
 :root {
   --bg: #F5F5F7;
-  --side: rgba(236, 236, 240, .85);
+  --side: rgba(255, 255, 255, .72);
   --card: #FFFFFF;
   --card-2: #FAFAFC;
   --line: rgba(0, 0, 0, .08);
@@ -27,7 +27,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #161618;
-    --side: rgba(30, 30, 33, .9);
+    --side: rgba(34, 34, 38, .92);
     --card: #222225;
     --card-2: #1C1C1F;
     --line: rgba(255, 255, 255, .07);
@@ -55,14 +55,23 @@ button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 1px; }
 
 /* ---------- layout ---------- */
-.shell { display: grid; grid-template-columns: 228px 1fr; height: 100vh; }
+/* Like Telegram: no title bar, the sidebar floats as a rounded card inset from
+   the window edges. On macOS (html.mac) the window's traffic lights sit in the
+   card's top row, next to the name; that strip is the window's drag area. */
+.shell { display: grid; grid-template-columns: 252px 1fr; height: 100vh; }
 .side {
-  background: var(--side); border-right: .5px solid var(--line);
-  display: flex; flex-direction: column; padding: 18px 10px 12px;
+  margin: 8px 0 8px 8px; border-radius: 20px; min-height: 0; overflow-y: auto;
+  background: var(--side); box-shadow: var(--shadow), 0 8px 24px rgba(0, 0, 0, .06);
+  display: flex; flex-direction: column; padding: 14px 10px 10px;
   -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  scrollbar-width: none;
 }
-.brand { display: flex; align-items: center; gap: 10px; padding: 2px 10px 18px; font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
-.brand img { width: 28px; height: 28px; border-radius: 7px; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+.brand { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; margin-bottom: 14px; font-weight: 600; font-size: 14px; letter-spacing: -.01em; }
+.brand img { width: 22px; height: 22px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0, 0, 0, .2); }
+/* the box is trimmed to the capitals, so flex centres the letters themselves, not the line with its ascender space */
+.brand span { line-height: 1; text-box: trim-both cap alphabetic; }
+html.mac .side { padding-top: 4px; }  /* the name's centre is level with the traffic lights' (20 pt from the top) */
+html.mac .brand { padding-left: 72px; }  /* the traffic lights take the start of this row */
 nav { display: flex; flex-direction: column; gap: 1px; }
 nav a {
   display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 8px;
@@ -80,6 +89,8 @@ nav a.on .badge { background: rgba(255, 255, 255, .25); color: #fff; }
 .side-foot { margin-top: auto; padding: 10px; color: var(--faint); font-size: 11.5px; font-variant-numeric: tabular-nums; }
 
 main { overflow-y: auto; padding: 30px 40px 48px; scroll-behavior: smooth; }
+/* the top 44 pt is the window's drag strip (window_darwin.go): the scroll area starts below it */
+html.mac main { margin-top: 44px; padding-top: 4px; }
 .page { max-width: 780px; margin: 0 auto; }
 @keyframes page { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translateX(-50%); } }
 h1 { font-size: 26px; font-weight: 700; margin: 0 0 4px; letter-spacing: -.022em; }

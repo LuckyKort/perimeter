@@ -6,8 +6,10 @@ cd "$(dirname "$0")/.."
 
 VERSION="${VERSION:-$(git describe --tags --always 2>/dev/null || echo dev)}"
 VERSION="${VERSION#v}"
-# REPO=owner/name turns on the About link, problem reports and updates from its releases.
-REPO="${REPO:-}"
+# REPO=owner/name: another repository for updates, the About link and problem
+# reports (the default is in internal/app/paths.go). REPO= with no value turns them off.
+LDREPO=""
+if [ "${REPO+set}" = set ]; then LDREPO="-X perimeter/internal/app.Repo=$REPO"; fi
 APP=dist/Perimeter.app
 rm -rf "$APP" dist/Perimeter-macos.zip build/mac
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/mac
@@ -17,7 +19,7 @@ for arch in arm64 amd64; do
   # The panel window (WebKit) has C++ parts, so both compilers get the target arch.
   CC="clang -arch $carch" CXX="clang++ -arch $carch" CGO_CXXFLAGS="-Wno-deprecated-literal-operator" \
   CGO_ENABLED=1 GOOS=darwin GOARCH=$arch MACOSX_DEPLOYMENT_TARGET=11.0 \
-    go build -trimpath -ldflags "-s -w -X main.version=$VERSION -X perimeter/internal/app.Repo=$REPO" -o build/mac/perimeter-$arch ./cmd/perimeter
+    go build -trimpath -ldflags "-s -w -X main.version=$VERSION $LDREPO" -o build/mac/perimeter-$arch ./cmd/perimeter
 done
 lipo -create build/mac/perimeter-arm64 build/mac/perimeter-amd64 -output "$APP/Contents/MacOS/perimeter"
 

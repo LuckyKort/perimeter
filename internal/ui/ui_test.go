@@ -74,7 +74,16 @@ func TestICO(t *testing.T) {
 	if _, err := png.Decode(bytes.NewReader(ico[off:])); err != nil {
 		t.Fatalf("first image is not a PNG: %v", err)
 	}
-	if _, err := png.Decode(bytes.NewReader(Dot(Amber))); err != nil {
-		t.Fatal(err)
+	for _, tone := range []Tone{Green, Gray, Amber, Red} {
+		b, template := BarIcon(tone, 3)
+		if template != (tone == Green || tone == Gray) {
+			t.Fatalf("tone %d: template %v", tone, template)
+		}
+		if _, err := png.Decode(bytes.NewReader(b)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if BarLit(10*time.Second, 20*time.Second) != 4 || BarLit(0, 20*time.Second) != 0 || BarLit(20*time.Second, 20*time.Second) != 8 {
+		t.Fatal("BarLit")
 	}
 }

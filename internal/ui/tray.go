@@ -552,8 +552,17 @@ func (t *Tray) setIcon(s guard.Snapshot) {
 	}
 	key := fmt.Sprint(tone, cc)
 	if runtime.GOOS == "darwin" {
-		if key != t.lastIcon {
-			systray.SetIcon(Dot(tone))
+		// The fence's dashes go out one by one while apps wait for the right IP.
+		lit := 8
+		if s.Status == guard.Suspect && s.Reason != guard.NetChanged && !s.Paused() {
+			lit = BarLit(s.GraceLeft, s.Config.Grace.D())
+		}
+		if key = fmt.Sprint(tone, lit); key != t.lastIcon {
+			if b, template := BarIcon(tone, lit); template {
+				systray.SetTemplateIcon(b, b)
+			} else {
+				systray.SetIcon(b)
+			}
 		}
 		systray.SetTitle(barText(s))
 	} else if key != t.lastIcon {

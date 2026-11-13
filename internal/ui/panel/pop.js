@@ -21,7 +21,7 @@ const L = {
     upd: "Perimeter", upd_btn: "Обновить", whats: "Что нового", hide: "Скрыть", installing: "Обновляю до", of: "из", mb: "МБ",
     upd_note: "Проверю контрольную сумму и перезапущусь. Защита не выключится.",
     updated: "Обновлено до", all: "Все изменения",
-    open: "Открыть панель →", leaks: "Утечки", checked: "Проверяю", trusted_t: "Сеть добавлена в доверенные",
+    open: "Открыть панель", leaks: "Утечки", checked: "Проверяю", trusted_t: "Сеть добавлена в доверенные",
   },
   en: {
     ob_t: "Hi! A one-minute setup", ob_ip: "I've allowed the current address:", ob_q: "Is this your VPN's address?", ob_yes: "Yes, the VPN", ob_no: "No",
@@ -40,7 +40,7 @@ const L = {
     upd: "Perimeter", upd_btn: "Update", whats: "What's new", hide: "Hide", installing: "Updating to", of: "of", mb: "MB",
     upd_note: "I'll check the checksum and restart. Protection stays on.",
     updated: "Updated to", all: "All changes",
-    open: "Open the panel →", leaks: "Leaks", checked: "Checking", trusted_t: "Network added to trusted",
+    open: "Open the panel", leaks: "Leaks", checked: "Checking", trusted_t: "Network added to trusted",
   },
 };
 
@@ -211,7 +211,7 @@ function actions() {
 function render() {
   const html = `<div class="top"><img src="icon.png" alt=""><b>Perimeter</b><span class="sp"></span><span class="ver">${esc(S.version)}</span></div>
     ${onboardCard() || updateCard()}${hero()}${apps()}${actions()}
-    <div class="foot"><button class="open" data-panel="overview">${t("open")}</button></div>`;
+    <button class="btn open" data-panel="overview">${svg("panel")}${t("open")}</button>`;
   if (html === lastHTML) return;
   lastHTML = html;
   document.getElementById("pop").innerHTML = html;
